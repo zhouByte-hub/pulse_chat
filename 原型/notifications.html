@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse Chat - 通知中心</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .notifications-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .notifications-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .notification-badge {
+            background: #f56c6c;
+            color: white;
+            border-radius: 10px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .header-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .header-btn.primary {
+            background: #409EFF;
+            color: white;
+        }
+        
+        .header-btn.primary:hover {
+            background: #66b1ff;
+        }
+        
+        .header-btn.secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        .header-btn.secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .notifications-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .notifications-sidebar {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            padding: 20px;
+            height: fit-content;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+        
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .filter-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .filter-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .filter-item.active {
+            background: #e6f7ff;
+            border-color: #409EFF;
+            color: #409EFF;
+        }
+        
+        .filter-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .filter-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .filter-count {
+            background: #409EFF;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .filter-item.active .filter-count {
+            background: #409EFF;
+        }
+        
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-radius: 8px;
+            background: #fafafa;
+            transition: all 0.3s;
+        }
+        
+        .setting-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .setting-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .setting-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .setting-text {
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .setting-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .setting-toggle.active {
+            background: #409EFF;
+        }
+        
+        .setting-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .setting-toggle.active::after {
+            left: 22px;
+        }
+        
+        .notifications-main {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .notifications-tabs {
+            display: flex;
+            border-bottom: 1px solid #e6e6e6;
+            background: #fafafa;
+        }
+        
+        .notifications-tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+        }
+        
+        .notifications-tab:hover {
+            background: #f0f0f0;
+        }
+        
+        .notifications-tab.active {
+            color: #409EFF;
+            border-bottom-color: #409EFF;
+            background: white;
+        }
+        
+        .tab-badge {
+            position: absolute;
+            top: 8px;
+            right: 20px;
+            background: #f56c6c;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .notifications-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .notification-item {
+            display: flex;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .notification-item:hover {
+            background: #fafafa;
+        }
+        
+        .notification-item.unread {
+            background: #f0f9ff;
+            border-left: 4px solid #409EFF;
+        }
+        
+        .notification-item.unread::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 12px;
+            width: 8px;
+            height: 8px;
+            background: #f56c6c;
+            border-radius: 50%;
+        }
+        
+        .notification-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin-right: 15px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .notification-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .notification-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .notification-icon.system {
+            background: #e6f7ff;
+            color: #409EFF;
+        }
+        
+        .notification-icon.message {
+            background: #f6ffed;
+            color: #52c41a;
+        }
+        
+        .notification-icon.mention {
+            background: #fff7e6;
+            color: #fa8c16;
+        }
+        
+        .notification-icon.friend {
+            background: #f9f0ff;
+            color: #722ed1;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .notification-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .notification-time {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .notification-text {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .notification-preview {
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+            border: 1px solid #e6e6e6;
+        }
+        
+        .notification-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .notification-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .notification-btn.primary {
+            background: #409EFF;
+            color: white;
+        }
+        
+        .notification-btn.primary:hover {
+            background: #66b1ff;
+        }
+        
+        .notification-btn.secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        .notification-btn.secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .notification-delete {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .notification-delete:hover {
+            background: #ffe6e6;
+            color: #f56c6c;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+        
+        .empty-text {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .empty-subtext {
+            font-size: 14px;
+            color: #bbb;
+        }
+        
+        .load-more {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .load-more-btn {
+            padding: 10px 30px;
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            background: white;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .load-more-btn:hover {
+            background: #f0f0f0;
+            border-color: #d9d9d9;
+        }
+        
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f0f0f0;
+            border-top: 2px solid #409EFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .notifications-container {
+                padding: 10px;
+            }
+            
+            .notifications-header {
+                padding: 20px;
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .header-title {
+                font-size: 24px;
+            }
+            
+            .notifications-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .notifications-sidebar {
+                order: 2;
+            }
+            
+            .notifications-main {
+                order: 1;
+            }
+            
+            .notification-item {
+                padding: 15px;
+            }
+            
+            .notification-avatar,
+            .notification-icon {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="notifications-container">
+        <!-- 通知头部 -->
+        <div class="notifications-header">
+            <h1 class="header-title">通知中心</h1>
+            <div class="header-actions">
+                <span class="notification-badge" id="unreadCount">12</span>
+                <button class="header-btn secondary" onclick="markAllAsRead()">
+                    <i class="fas fa-check-double"></i> 全部已读
+                </button>
+                <button class="header-btn primary" onclick="openNotificationSettings()">
+                    <i class="fas fa-cog"></i> 通知设置
+                </button>
+            </div>
+        </div>
+        
+        <!-- 通知内容区域 -->
+        <div class="notifications-content">
+            <!-- 侧边栏 -->
+            <div class="notifications-sidebar">
+                <!-- 通知类型筛选 -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">通知类型</h3>
+                    <div class="filter-list">
+                        <div class="filter-item active" onclick="filterNotifications('all', this)">
+                            <div class="filter-info">
+                                <div class="filter-icon">
+                                    <i class="fas fa-inbox"></i>
+                                </div>
+                                <div class="filter-text">全部通知</div>
+                            </div>
+                            <div class="filter-count">156</div>
+                        </div>
+                        <div class="filter-item" onclick="filterNotifications('system', this)">
+                            <div class="filter-info">
+                                <div class="filter-icon">
+                                    <i class="fas fa-cog"></i>
+                                </div>
+                                <div class="filter-text">系统通知</div>
+                            </div>
+                            <div class="filter-count">23</div>
+                        </div>
+                        <div class="filter-item" onclick="filterNotifications('message', this)">
+                            <div class="filter-info">
+                                <div class="filter-icon">
+                                    <i class="fas fa-comment"></i>
+                                </div>
+                                <div class="filter-text">消息提醒</div>
+                            </div>
+                            <div class="filter-count">89</div>
+                        </div>
+                        <div class="filter-item" onclick="filterNotifications('mention', this)">
+                            <div class="filter-info">
+                                <div class="filter-icon">
+                                    <i class="fas fa-at"></i>
+                                </div>
+                                <div class="filter-text">@提及</div>
+                            </div>
+                            <div class="filter-count">32</div>
+                        </div>
+                        <div class="filter-item" onclick="filterNotifications('friend', this)">
+                            <div class="filter-info">
+                                <div class="filter-icon">
+                                    <i class="fas fa-user-plus"></i>
+                                </div>
+                                <div class="filter-text">好友申请</div>
+                            </div>
+                            <div class="filter-count">12</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 通知设置 -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">通知设置</h3>
+                    <div class="settings-list">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-icon">
+                                    <i class="fas fa-bell"></i>
+                                </div>
+                                <div class="setting-text">桌面通知</div>
+                            </div>
+                            <div class="setting-toggle active" onclick="toggleSetting(this, 'desktop')"></div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-icon">
+                                    <i class="fas fa-volume-up"></i>
+                                </div>
+                                <div class="setting-text">声音提醒</div>
+                            </div>
+                            <div class="setting-toggle active" onclick="toggleSetting(this, 'sound')"></div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="setting-text">邮件通知</div>
+                            </div>
+                            <div class="setting-toggle" onclick="toggleSetting(this, 'email')"></div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-icon">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </div>
+                                <div class="setting-text">移动端推送</div>
+                            </div>
+                            <div class="setting-toggle active" onclick="toggleSetting(this, 'mobile')"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 主要内容区域 -->
+            <div class="notifications-main">
+                <!-- 通知标签页 -->
+                <div class="notifications-tabs">
+                    <div class="notifications-tab active" onclick="switchNotificationTab('all', this)">
+                        全部
+                        <span class="tab-badge">12</span>
+                    </div>
+                    <div class="notifications-tab" onclick="switchNotificationTab('unread', this)">
+                        未读
+                        <span class="tab-badge">12</span>
+                    </div>
+                    <div class="notifications-tab" onclick="switchNotificationTab('important', this)">
+                        重要
+                    </div>
+                </div>
+                
+                <!-- 通知列表 -->
+                <div class="notifications-list" id="notificationsList">
+                    <!-- 系统通知 -->
+                    <div class="notification-item unread" data-type="system">
+                        <div class="notification-icon system">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-header">
+                                <div class="notification-title">系统维护通知</div>
+                                <div class="notification-time">2小时前</div>
+                            </div>
+                            <div class="notification-text">
+                                系统将于今晚23:00-次日凌晨01:00进行维护升级，期间服务可能暂时无法使用，请提前做好准备。
+                            </div>
+                            <div class="notification-actions">
+                                <button class="notification-btn primary" onclick="viewSystemDetails()">
+                                    <i class="fas fa-info-circle"></i> 查看详情
+                                </button>
+                                <button class="notification-btn secondary" onclick="markAsRead(this)">
+                                    <i class="fas fa-check"></i> 标记已读
+                                </button>
+                            </div>
+                        </div>
+                        <button class="notification-delete" onclick="deleteNotification(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 消息提醒 -->
+                    <div class="notification-item unread" data-type="message">
+                        <div class="notification-avatar">
+                            <img src="https://picsum.photos/seed/zhangsan/48/48.jpg" alt="联系人头像">
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-header">
+                                <div class="notification-title">张三发来新消息</div>
+                                <div class="notification-time">3小时前</div>
+                            </div>
+                            <div class="notification-text">
+                                你好，关于项目的进度，我想和你讨论一下下一步的计划安排。
+                            </div>
+                            <div class="notification-preview">
+                                <div>张三: 你好，关于项目的进度，我想和你讨论一下下一步的计划安排。</div>
+                                <div style="margin-top: 5px; font-size: 12px; color: #999;">技术交流群 · 14:30</div>
+                            </div>
+                            <div class="notification-actions">
+                                <button class="notification-btn primary" onclick="replyToMessage('张三')">
+                                    <i class="fas fa-reply"></i> 回复消息
+                                </button>
+                                <button class="notification-btn secondary" onclick="markAsRead(this)">
+                                    <i class="fas fa-check"></i> 标记已读
+                                </button>
+                            </div>
+                        </div>
+                        <button class="notification-delete" onclick="deleteNotification(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- @提及通知 -->
+                    <div class="notification-item unread" data-type="mention">
+                        <div class="notification-icon mention">
+                            <i class="fas fa-at"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-header">
+                                <div class="notification-title">李四在群聊中@了你</div>
+                                <div class="notification-time">5小时前</div>
+                            </div>
+                            <div class="notification-text">
+                                李四在「产品设计讨论」群中提到了你，内容涉及会议安排。
+                            </div>
+                            <div class="notification-preview">
+                                <div>李四: @所有人 下周二的会议安排已经确定，<span style="background: #fff7e6; color: #fa8c16; padding: 2px 4px; border-radius: 3px;">@张三</span> 请准备好设计方案。</div>
+                                <div style="margin-top: 5px; font-size: 12px; color: #999;">产品设计讨论 · 11:45</div>
+                            </div>
+                            <div class="notification-actions">
+                                <button class="notification-btn primary" onclick="viewMention('产品设计讨论')">
+                                    <i class="fas fa-eye"></i> 查看消息
+                                </button>
+                                <button class="notification-btn secondary" onclick="markAsRead(this)">
+                                    <i class="fas fa-check"></i> 标记已读
+                                </button>
+                            </div>
+                        </div>
+                        <button class="notification-delete" onclick="deleteNotification(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 好友申请 -->
+                    <div class="notification-item unread" data-type="friend">
+                        <div class="notification-avatar">
+                            <img src="https://picsum.photos/seed/wangwu/48/48.jpg" alt="联系人头像">
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-header">
+                                <div class="notification-title">王五申请添加好友</div>
+                                <div class="notification-time">昨天</div>
+                            </div>
+                            <div class="notification-text">
+                                王五想要添加你为好友，附言：你好，我是产品经理，希望可以交流学习。
+                            </div>
+                            <div class="notification-actions">
+                                <button class="notification-btn primary" onclick="acceptFriendRequest('王五')">
+                                    <i class="fas fa-check"></i> 接受
+                                </button>
+                                <button class="notification-btn secondary" onclick="rejectFriendRequest('王五')">
+                                    <i class="fas fa-times"></i> 拒绝
+                                </button>
+                            </div>
+                        </div>
+                        <button class="notification-delete" onclick="deleteNotification(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 已读通知示例 -->
+                    <div class="notification-item" data-type="system">
+                        <div class="notification-icon system">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-header">
+                                <div class="notification-title">新功能上线</div>
+                                <div class="notification-time">2天前</div>
+                            </div>
+                            <div class="notification-text">
+                                全新的文件传输功能已经上线，现在你可以更方便地分享文件给好友和群组。
+                            </div>
+                            <div class="notification-actions">
+                                <button class="notification-btn primary" onclick="tryNewFeature()">
+                                    <i class="fas fa-rocket"></i> 立即体验
+                                </button>
+                            </div>
+                        </div>
+                        <button class="notification-delete" onclick="deleteNotification(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 更多通知... -->
+                    <div class="notification-item" data-type="message">
+                        <div class="notification-avatar">
+                            <img src="https://picsum.photos/seed/tech-group/48/48.jpg" alt="群组头像">
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-header">
+                                <div class="notification-title">技术交流群有新消息</div>
+                                <div class="notification-time">3天前</div>
+                            </div>
+                            <div class="notification-text">
+                                群内有5条未读消息，涉及技术讨论和项目进度更新。
+                            </div>
+                            <div class="notification-actions">
+                                <button class="notification-btn primary" onclick="openGroupChat('技术交流群')">
+                                    <i class="fas fa-comments"></i> 查看群聊
+                                </button>
+                            </div>
+                        </div>
+                        <button class="notification-delete" onclick="deleteNotification(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 加载更多 -->
+                <div class="load-more">
+                    <button class="load-more-btn" onclick="loadMoreNotifications()" id="loadMoreBtn">
+                        加载更多
+                    </button>
+                </div>
+                
+                <!-- 空状态 -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="fas fa-bell-slash"></i>
+                    </div>
+                    <div class="empty-text">暂无通知</div>
+                    <div class="empty-subtext">当有新通知时，会在这里显示</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 当前筛选器和标签页
+        let currentFilter = 'all';
+        let currentTab = 'all';
+        
+        // 筛选通知
+        function filterNotifications(type, element) {
+            // 移除所有活动状态
+            document.querySelectorAll('.filter-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 添加活动状态
+            element.classList.add('active');
+            currentFilter = type;
+            
+            // 筛选通知列表
+            filterNotificationList();
+            showNotification(`已切换到${type === 'all' ? '全部' : type === 'system' ? '系统通知' : type === 'message' ? '消息提醒' : type === 'mention' ? '@提及' : '好友申请'}通知`, 'info');
+        }
+        
+        // 切换通知标签页
+        function switchNotificationTab(tab, element) {
+            // 移除所有活动状态
+            document.querySelectorAll('.notifications-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 添加活动状态
+            element.classList.add('active');
+            currentTab = tab;
+            
+            // 筛选通知列表
+            filterNotificationList();
+            showNotification(`已切换到${tab === 'all' ? '全部' : tab === 'unread' ? '未读' : '重要'}通知`, 'info');
+        }
+        
+        // 筛选通知列表
+        function filterNotificationList() {
+            const notifications = document.querySelectorAll('.notification-item');
+            let visibleCount = 0;
+            
+            notifications.forEach(notification => {
+                const type = notification.dataset.type;
+                const isUnread = notification.classList.contains('unread');
+                
+                let shouldShow = true;
+                
+                // 根据筛选器过滤
+                if (currentFilter !== 'all' && type !== currentFilter) {
+                    shouldShow = false;
+                }
+                
+                // 根据标签页过滤
+                if (currentTab === 'unread' && !isUnread) {
+                    shouldShow = false;
+                }
+                
+                if (currentTab === 'important' && !notification.classList.contains('important')) {
+                    shouldShow = false;
+                }
+                
+                if (shouldShow) {
+                    notification.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    notification.style.display = 'none';
+                }
+            });
+            
+            // 检查是否显示空状态
+            const emptyState = document.getElementById('emptyState');
+            const notificationsList = document.getElementById('notificationsList');
+            const loadMore = document.querySelector('.load-more');
+            
+            if (visibleCount === 0) {
+                notificationsList.style.display = 'none';
+                loadMore.style.display = 'none';
+                emptyState.style.display = 'block';
+            } else {
+                notificationsList.style.display = 'block';
+                loadMore.style.display = 'block';
+                emptyState.style.display = 'none';
+            }
+        }
+        
+        // 标记为已读
+        function markAsRead(element) {
+            const notificationItem = element.closest('.notification-item');
+            notificationItem.classList.remove('unread');
+            
+            // 更新未读数量
+            updateUnreadCount();
+            showNotification('已标记为已读', 'success');
+            
+            // 如果当前在未读标签页，重新筛选
+            if (currentTab === 'unread') {
+                filterNotificationList();
+            }
+        }
+        
+        // 全部标记为已读
+        function markAllAsRead() {
+            const unreadNotifications = document.querySelectorAll('.notification-item.unread');
+            
+            unreadNotifications.forEach(notification => {
+                notification.classList.remove('unread');
+            });
+            
+            // 更新未读数量
+            updateUnreadCount();
+            showNotification('已全部标记为已读', 'success');
+            
+            // 如果当前在未读标签页，重新筛选
+            if (currentTab === 'unread') {
+                filterNotificationList();
+            }
+        }
+        
+        // 删除通知
+        function deleteNotification(element) {
+            const notificationItem = element.closest('.notification-item');
+            const wasUnread = notificationItem.classList.contains('unread');
+            
+            notificationItem.style.animation = 'slideOut 0.3s ease';
+            
+            setTimeout(() => {
+                notificationItem.remove();
+                
+                // 如果是未读通知，更新未读数量
+                if (wasUnread) {
+                    updateUnreadCount();
+                }
+                
+                showNotification('通知已删除', 'info');
+                
+                // 重新筛选通知列表
+                filterNotificationList();
+            }, 300);
+        }
+        
+        // 更新未读数量
+        function updateUnreadCount() {
+            const unreadCount = document.querySelectorAll('.notification-item.unread').length;
+            document.getElementById('unreadCount').textContent = unreadCount;
+            
+            // 更新标签页徽章
+            const tabBadges = document.querySelectorAll('.tab-badge');
+            tabBadges.forEach(badge => {
+                badge.textContent = unreadCount;
+            });
+        }
+        
+        // 切换设置
+        function toggleSetting(element, setting) {
+            element.classList.toggle('active');
+            const isActive = element.classList.contains('active');
+            
+            showNotification(`${setting === 'desktop' ? '桌面通知' : setting === 'sound' ? '声音提醒' : setting === 'email' ? '邮件通知' : '移动端推送'}已${isActive ? '开启' : '关闭'}`, 'info');
+        }
+        
+        // 查看系统详情
+        function viewSystemDetails() {
+            showNotification('正在查看系统维护详情...', 'info');
+        }
+        
+        // 回复消息
+        function replyToMessage(name) {
+            showNotification(`正在打开与${name}的聊天...`, 'info');
+        }
+        
+        // 查看@提及
+        function viewMention(group) {
+            showNotification(`正在查看${group}中的@提及消息...`, 'info');
+        }
+        
+        // 接受好友申请
+        function acceptFriendRequest(name) {
+            showNotification(`已接受${name}的好友申请`, 'success');
+            
+            // 移除通知
+            const notification = event.target.closest('.notification-item');
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                notification.remove();
+                updateUnreadCount();
+            }, 300);
+        }
+        
+        // 拒绝好友申请
+        function rejectFriendRequest(name) {
+            showNotification(`已拒绝${name}的好友申请`, 'info');
+            
+            // 移除通知
+            const notification = event.target.closest('.notification-item');
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                notification.remove();
+                updateUnreadCount();
+            }, 300);
+        }
+        
+        // 尝试新功能
+        function tryNewFeature() {
+            showNotification('正在跳转到新功能页面...', 'info');
+        }
+        
+        // 打开群聊
+        function openGroupChat(group) {
+            showNotification(`正在打开${group}群聊...`, 'info');
+        }
+        
+        // 打开通知设置
+        function openNotificationSettings() {
+            showNotification('正在打开通知设置...', 'info');
+        }
+        
+        // 加载更多通知
+        function loadMoreNotifications() {
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            const originalText = loadMoreBtn.innerHTML;
+            
+            // 显示加载状态
+            loadMoreBtn.innerHTML = '<div class="loading-spinner"></div>';
+            loadMoreBtn.disabled = true;
+            
+            // 模拟加载过程
+            setTimeout(() => {
+                // 添加新的通知项
+                const notificationsList = document.getElementById('notificationsList');
+                const newNotification = document.createElement('div');
+                newNotification.className = 'notification-item';
+                newNotification.dataset.type = 'system';
+                newNotification.innerHTML = `
+                    <div class="notification-icon system">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-header">
+                            <div class="notification-title">系统更新</div>
+                            <div class="notification-time">1周前</div>
+                        </div>
+                        <div class="notification-text">
+                            系统已更新到最新版本，修复了若干问题并优化了性能。
+                        </div>
+                        <div class="notification-actions">
+                            <button class="notification-btn primary" onclick="viewUpdateDetails()">
+                                <i class="fas fa-list"></i> 查看更新日志
+                            </button>
+                        </div>
+                    </div>
+                    <button class="notification-delete" onclick="deleteNotification(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                notificationsList.appendChild(newNotification);
+                
+                // 恢复按钮状态
+                loadMoreBtn.innerHTML = originalText;
+                loadMoreBtn.disabled = false;
+                
+                showNotification('已加载更多通知', 'success');
+            }, 1500);
+        }
+        
+        // 查看更新详情
+        function viewUpdateDetails() {
+            showNotification('正在查看更新详情...', 'info');
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-size: 14px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            // 根据类型设置背景色
+            switch (type) {
+                case 'success':
+                    notification.style.background = '#67c23a';
+                    break;
+                case 'error':
+                    notification.style.background = '#f56c6c';
+                    break;
+                case 'warning':
+                    notification.style.background = '#e6a23c';
+                    break;
+                default:
+                    notification.style.background = '#409EFF';
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // 添加动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化未读数量
+            updateUnreadCount();
+            
+            // 模拟实时通知
+            setTimeout(() => {
+                simulateNewNotification();
+            }, 5000);
+        });
+        
+        // 模拟新通知
+        function simulateNewNotification() {
+            const notificationsList = document.getElementById('notificationsList');
+            const newNotification = document.createElement('div');
+            newNotification.className = 'notification-item unread';
+            newNotification.dataset.type = 'message';
+            newNotification.style.animation = 'slideIn 0.5s ease';
+            newNotification.innerHTML = `
+                <div class="notification-avatar">
+                    <img src="https://picsum.photos/seed/newuser/48/48.jpg" alt="联系人头像">
+                </div>
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <div class="notification-title">新用户发来消息</div>
+                        <div class="notification-time">刚刚</div>
+                    </div>
+                    <div class="notification-text">
+                        你好，我想了解一下产品的详细信息。
+                    </div>
+                    <div class="notification-actions">
+                        <button class="notification-btn primary" onclick="replyToMessage('新用户')">
+                            <i class="fas fa-reply"></i> 回复消息
+                        </button>
+                        <button class="notification-btn secondary" onclick="markAsRead(this)">
+                            <i class="fas fa-check"></i> 标记已读
+                        </button>
+                    </div>
+                </div>
+                <button class="notification-delete" onclick="deleteNotification(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            notificationsList.insertBefore(newNotification, notificationsList.firstChild);
+            updateUnreadCount();
+            showNotification('收到新通知', 'info');
+        }
+    </script>
+</body>
+</html>
