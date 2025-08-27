@@ -1,0 +1,87 @@
+@use 'sass:color';
+@use './variables.scss' as *;
+
+// 全局样式
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: $text-primary;
+  background-color: $background-light;
+}
+
+// 通用样式类
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.card {
+  background: $background-white;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-light;
+  padding: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: $border-radius-md;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  
+  &.primary {
+    background: $primary-color;
+    color: white;
+    
+    &:hover {
+      background: color.adjust($primary-color, $lightness: 10%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+    }
+  }
+  
+  &.secondary {
+    background: $background-base;
+    color: $text-regular;
+    
+    &:hover {
+      background: color.adjust($background-base, $lightness: -5%);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .container {
+    padding: 0 15px;
+  }
+  
+  .chat-container .sidebar {
+    width: 80px;
+  }
+  
+  .nav-tab span {
+    display: none;
+  }
+  
+  .contact-info {
+    display: none;
+  }
+  
+  .contact-meta {
+    align-items: center;
+  }
+}
