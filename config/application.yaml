@@ -1,0 +1,11 @@
+
+database:
+  url: "mysql://root:123456@localhost:3306/pulse_chat"
+  username: root
+  password: 123456
+  max_connections: 100
+  min_connections: 10
+  connect_timeout: 10
+  idle_timeout: 60
+  max_lifetime: 60
+  sqlx_logging: true
