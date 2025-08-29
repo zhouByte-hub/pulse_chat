@@ -86,32 +86,9 @@ where
                 }
             };
 
-            // 定义JWT密钥（实际项目中应该从配置文件中读取）
-            // let secret = "your_secret_key_here";
-            // 从密钥字符串创建解码密钥
-            // let decoding_key = DecodingKey::from_secret(secret.as_ref());
-            // // 创建验证规则，使用HS256算法
-            // let validation = Validation::new(Algorithm::HS256);
-
-            // 尝试解码JWT token
             let user_id = PulseClaims::verify_token(&token, &secret)?;
             req.extensions_mut().insert(user_id);
             service.call(req).await
-            // let a = match decode::<PulseClaims>(&token, &decoding_key, &validation) {
-            //     Ok(token_data) => {
-            //         // token验证成功，从声明中提取用户ID
-            //         let user_id = token_data.claims.user_id;
-            //         // 将用户ID存入请求扩展，供后续处理使用
-            //         req.extensions_mut().insert(user_id);
-
-            //         // 放行请求，调用后续服务处理
-            //         service.call(req).await
-            //     }
-            //     Err(_) => {
-            //         // token验证失败，返回未授权错误
-            //         Err(actix_web::error::ErrorUnauthorized("Token不合法或已过期"))
-            //     }
-            // }
         })
     }
 }
