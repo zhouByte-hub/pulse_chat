@@ -3,6 +3,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Getters)]
 pub struct LoginRequest {
-    pub username: String,
-    pub password: String,
+    username: String,
+    password: String,
 }

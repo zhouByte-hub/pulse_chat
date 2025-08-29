@@ -1,3 +1,4 @@
+use ::config::ConfigError;
 use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use thiserror::Error;
 
@@ -8,13 +9,21 @@ pub enum PulseError {
 
     #[error("DbError: {0}")]
     DbError(#[from] sea_orm::DbErr),
-    
+
     #[error("Database connection error: {0}")]
     ConnectionError(String),
 
     #[error("Database not initialized")]
     DatabaseNotInitialized,
 
+    #[error("Config error: {0}")]
+    ConfigError(#[from] ConfigError),
+
+    #[error("Token error: {0}")]
+    TokenError(#[from] jsonwebtoken::errors::Error),
+
+    #[error("PulseStdError error: {0}")]
+    PulseStdError(String),
 }
 
 impl ResponseError for PulseError {

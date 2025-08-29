@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use crate::{config::error_config::PulseError, PulseResult};
+use crate::{PulseResult, config::error_config::PulseError};
 use once_cell::sync::OnceCell;
-use sea_orm::{ConnectOptions, DatabaseConnection, Database};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use serde::{Deserialize, Serialize};
 
 pub static DATABASE_CONNECT: OnceCell<DatabaseConnection> = OnceCell::new();
@@ -23,26 +23,29 @@ pub struct DatabaseConfig {
 impl DatabaseConfig {
     pub async fn init_from(config: &DatabaseConfig) -> PulseResult<()> {
         let url = format!(
-            "mysql://{}:{}@{}/pulse_chat",
+            "mysql://{}:{}@{}",
             config.username, config.password, config.url
         );
-        
+
         let mut connect_options = ConnectOptions::new(url);
         connect_options.max_connections(config.max_connections);
         connect_options.min_connections(config.min_connections);
         connect_options.connect_timeout(Duration::from_secs(config.connect_timeout));
         connect_options.idle_timeout(Duration::from_secs(config.idle_timeout));
         connect_options.max_lifetime(Duration::from_secs(config.max_lifetime));
-        connect_options.sqlx_logging(config.sqlx_logging); 
+        connect_options.sqlx_logging(config.sqlx_logging);
 
         let connect = Database::connect(connect_options).await?;
         DATABASE_CONNECT.get_or_init(move || connect);
         Ok(())
     }
-    
+
     // 添加获取数据库连接的方法
     pub fn get_connection() -> PulseResult<DatabaseConnection> {
-        let connect = DATABASE_CONNECT.get().cloned().ok_or(PulseError::DatabaseNotInitialized)?;
+        let connect = DATABASE_CONNECT
+            .get()
+            .cloned()
+            .ok_or(PulseError::DatabaseNotInitialized)?;
         Ok(connect)
     }
 }
