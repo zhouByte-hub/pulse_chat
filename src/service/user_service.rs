@@ -1,15 +1,14 @@
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-
 use crate::PulseResult;
 use crate::config::db_config::DatabaseConfig;
 use crate::model::entity::users;
-use crate::model::vo::login_request::LoginRequest;
+use crate::model::vo::{login_request::LoginRequest, register_request::RegisterRequest};
 use crate::utils::token::PulseClaims;
+use sea_orm::{ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter};
 
 pub struct UserService;
 
 impl UserService {
-    pub async fn login(login_data: LoginRequest) -> PulseResult<String> {
+    pub async fn login(login_data: LoginRequest) -> PulseResult<(u8, String)> {
         let connect = DatabaseConfig::get_connection()?;
 
         let hash_password = format!("{:X}", md5::compute(login_data.password()));
@@ -20,8 +19,37 @@ impl UserService {
             .await?;
         if let Some(model) = user {
             let token = PulseClaims::new(model.id).generate_token("secret")?;
-            return Ok(token);
+            return Ok((1, token));
         }
-        Ok("".to_string())
+        Ok((0, "login failed".to_string()))
+    }
+
+    pub async fn register(register_data: RegisterRequest) -> PulseResult<(u8, String)> {
+        let connect = DatabaseConfig::get_connection()?;
+
+        let user = users::Entity::find()
+            .filter(
+                Condition::any()
+                    .add(users::Column::Nickname.eq(register_data.nickname()))
+                    .add(users::Column::Email.eq(register_data.email())),
+            )
+            .one(&connect)
+            .await?;
+        if let Some(_) = user {
+            return Ok((0, "nickname or email exists".to_string()));
+        }
+        users::Entity::insert(users::ActiveModel {
+            username: ActiveValue::Set(register_data.username().to_owned()),
+            password_hash: ActiveValue::Set(format!(
+                "{:X}",
+                md5::compute(register_data.password())
+            )),
+            email: ActiveValue::Set(register_data.email().to_owned()),
+            nickname: ActiveValue::Set(Some(register_data.nickname().to_owned())),
+            ..Default::default()
+        })
+        .exec(&connect)
+        .await?;
+        Ok((1, "register success".to_string()))
     }
 }
