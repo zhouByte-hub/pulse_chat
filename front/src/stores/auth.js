@@ -47,7 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (userData) => {
     loading.value = true
     try {
-      const response = await axios.post('/api/auth/register', userData)
+      const response = await axios.post('/api/user/register', userData)
       return { success: true, message: '注册成功' }
     } catch (error) {
       return {

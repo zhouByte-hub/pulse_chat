@@ -6,6 +6,4 @@ pub struct RegisterRequest {
     username: String,
     password: String,
     email: String,
-    nickname: String,
-    phone: String,
 }

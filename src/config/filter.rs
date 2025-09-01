@@ -49,7 +49,6 @@ where
         // 获取请求路径并转换为字符串
         let path = req.path().to_string();
 
-        println!("path: {}", path);
         // 克隆公共路由列表，用于在异步块中使用
         let public_routes = self.public_routes.clone();
         // 克隆服务引用，用于在异步块中调用

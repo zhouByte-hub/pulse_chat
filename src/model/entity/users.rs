@@ -16,7 +16,6 @@ pub struct Model {
     pub nickname: Option<String>,
     pub avatar: Option<String>,
     pub status: Option<Status>,
-    pub last_seen_at: Option<DateTimeUtc>,
     pub created_at: Option<DateTimeUtc>,
     pub updated_at: Option<DateTimeUtc>,
 }

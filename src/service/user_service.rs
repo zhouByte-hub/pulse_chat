@@ -30,13 +30,13 @@ impl UserService {
         let user = users::Entity::find()
             .filter(
                 Condition::any()
-                    .add(users::Column::Nickname.eq(register_data.nickname()))
+                    .add(users::Column::Username.eq(register_data.username()))
                     .add(users::Column::Email.eq(register_data.email())),
             )
             .one(&connect)
             .await?;
         if let Some(_) = user {
-            return Ok((0, "nickname or email exists".to_string()));
+            return Ok((0, "username or email exists".to_string()));
         }
         users::Entity::insert(users::ActiveModel {
             username: ActiveValue::Set(register_data.username().to_owned()),
@@ -45,7 +45,6 @@ impl UserService {
                 md5::compute(register_data.password())
             )),
             email: ActiveValue::Set(register_data.email().to_owned()),
-            nickname: ActiveValue::Set(Some(register_data.nickname().to_owned())),
             ..Default::default()
         })
         .exec(&connect)
