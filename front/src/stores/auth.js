@@ -22,7 +22,8 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (credentials) => {
     loading.value = true
     try {
-      const response = await axios.post('/api/auth/login', credentials)
+      const response = await axios.post('/api/user/login', credentials)
+      console.log(response)
       const { token: authToken, user: userData } = response.data
       
       token.value = authToken

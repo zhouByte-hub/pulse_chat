@@ -118,7 +118,6 @@ const handleLogin = async () => {
       rememberMe: loginForm.rememberMe
     })
 
-    console.log(result)
     if (result.success) {
       ElMessage.success('登录成功')
       router.push('/chat')

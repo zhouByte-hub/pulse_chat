@@ -2,7 +2,7 @@
 database:
   url: "43.139.97.119:3306/pulse_chat"
   username: root
-  password: 123456
+  password: dev_123
   max_connections: 100
   min_connections: 10
   connect_timeout: 10
@@ -14,5 +14,5 @@ token:
   secret: "dev_12356"
 
 public_list:
-  - "/user/login"
-  - "/user/register"
+  - "/api/user/login"
+  - "/api/user/register"

@@ -21,7 +21,7 @@ pub async fn user_register(register_data: web::Json<RegisterRequest>) -> PulseRe
 }
 
 pub fn user_request_config(service_config: &mut web::ServiceConfig) {
-    let scope = web::scope("/user")
+    let scope = web::scope("/api/user")
         .service(user_login)
         .service(user_register);
     service_config.service(scope);

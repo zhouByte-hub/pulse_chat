@@ -5,4 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct LoginRequest {
     username: String,
     password: String,
+
+    #[serde(rename = "rememberMe")]
+    remember_me: bool
 }
