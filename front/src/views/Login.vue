@@ -117,10 +117,11 @@ const handleLogin = async () => {
       password: loginForm.password,
       rememberMe: loginForm.rememberMe
     })
+    console.log("abc", result)
 
     if (result.success) {
       ElMessage.success('登录成功')
-      router.push('/chat')
+      router.push({path: '/chat'})
     } else {
       ElMessage.error(result.message)
     }

@@ -23,14 +23,12 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const response = await axios.post('/api/user/login', credentials)
-      console.log(response)
-      const { token: authToken, user: userData } = response.data
       
-      token.value = authToken
-      user.value = userData
+      token.value = response.data.data
+      console.log(token.value)
       
-      localStorage.setItem('token', authToken)
-      setAuthHeader(authToken)
+      localStorage.setItem('token', token.value)
+      setAuthHeader(token.value)
       
       return { success: true }
     } catch (error) {

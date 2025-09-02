@@ -137,17 +137,6 @@
                 </div>
                 <el-switch v-model="privacySettings.showLastSeen" />
               </div>
-              <div class="privacy-item">
-                <div class="privacy-info">
-                  <div class="privacy-title">个人资料可见性</div>
-                  <div class="privacy-desc">控制谁能看到你的个人资料</div>
-                </div>
-                <el-select v-model="privacySettings.profileVisibility" size="small">
-                  <el-option label="所有人" value="everyone" />
-                  <el-option label="仅联系人" value="contacts" />
-                  <el-option label="仅自己" value="self" />
-                </el-select>
-              </div>
             </div>
           </div>
         </div>
