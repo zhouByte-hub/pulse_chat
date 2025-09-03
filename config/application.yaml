@@ -2,7 +2,7 @@
 database:
   url: "43.139.97.119:3306/pulse_chat"
   username: root
-  password: dev_123
+  password: ***************
   max_connections: 100
   min_connections: 10
   connect_timeout: 10

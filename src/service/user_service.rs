@@ -1,9 +1,11 @@
 use crate::PulseResult;
 use crate::config::db_config::DatabaseConfig;
-use crate::model::entity::users;
+use crate::model::dto::user_dto::UserDto;
+use crate::model::entity::sea_orm_active_enums::Status;
+use crate::model::entity::{contacts, users};
 use crate::model::vo::{login_request::LoginRequest, register_request::RegisterRequest};
 use crate::utils::token::PulseClaims;
-use sea_orm::{ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter};
+use sea_orm::{ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter, SelectColumns};
 
 pub struct UserService;
 
@@ -19,9 +21,34 @@ impl UserService {
             .await?;
         if let Some(model) = user {
             let token = PulseClaims::new(model.id).generate_token("secret")?;
+
+            // 更新登录状态
+            let mut user = users::ActiveModel::from(model);
+            user.status = ActiveValue::Set(Some(Status::Online));
+            users::Entity::update(user).exec(&connect).await?;
             return Ok((1, token));
         }
         Ok((0, "login failed".to_string()))
+    }
+
+    pub async fn loginout(user_id: u64) -> PulseResult<(u8, String)> {
+        let connect = DatabaseConfig::get_connection()?;
+
+        let user = users::Entity::find()
+            .filter(
+                Condition::all()
+                    .add(users::Column::Id.eq(user_id))
+                    .add(users::Column::Status.eq(Status::Online)),
+            )
+            .one(&connect)
+            .await?;
+        if let Some(model) = user {
+            let mut active_user = users::ActiveModel::from(model);
+            active_user.status = ActiveValue::Set(Some(Status::Offline));
+            users::Entity::update(active_user).exec(&connect).await?;
+            return Ok((1, "loginout success".to_string()));
+        }
+        Ok((0, "loginout failed".to_string()))
     }
 
     pub async fn register(register_data: RegisterRequest) -> PulseResult<(u8, String)> {
@@ -50,5 +77,68 @@ impl UserService {
         .exec(&connect)
         .await?;
         Ok((1, "register success".to_string()))
+    }
+
+    pub async fn search_contact(contact_name: String, user_id: u64) -> PulseResult<Vec<UserDto>> {
+        let connect = DatabaseConfig::get_connection()?;
+
+        let user_list = users::Entity::find()
+            .select_column(users::Column::Id)
+            .filter(
+                Condition::any()
+                    .add(users::Column::Username.like(format!("%{}%", contact_name)))
+                    .add(users::Column::Nickname.like(format!("%{}%", contact_name)))
+                    .add(users::Column::Phone.like(format!("%{}%", contact_name))),
+            )
+            .all(&connect)
+            .await?;
+
+        let mut search_result: Vec<UserDto> = Vec::new();
+        if !user_list.is_empty() {
+            let contact_list = user_list.iter().map(|user| user.id).collect::<Vec<u64>>();
+
+            let contact_list = contacts::Entity::find()
+                .select_column(contacts::Column::ContactId)
+                .filter(
+                    Condition::all()
+                        .add(contacts::Column::UserId.eq(user_id))
+                        .add(contacts::Column::ContactId.is_in(contact_list)),
+                )
+                .all(&connect)
+                .await?;
+
+            if contact_list.is_empty() {
+                return Ok(search_result);
+            }
+            let contact_id_list = contact_list
+                .iter()
+                .map(|item| item.contact_id)
+                .collect::<Vec<u64>>();
+            search_result = users::Entity::find()
+                .filter(users::Column::Id.is_in(contact_id_list))
+                .all(&connect)
+                .await?
+                .into_iter()
+                .map(|user| UserDto::from(user))
+                .collect();
+        }
+        Ok(search_result)
+    }
+
+    pub async fn search_user(content: String) -> PulseResult<Vec<UserDto>> {
+        let connect = DatabaseConfig::get_connection()?;
+        let user_list = users::Entity::find()
+            .filter(
+                Condition::any()
+                    .add(users::Column::Username.like(format!("%{}%", content)))
+                    .add(users::Column::Nickname.like(format!("%{}%", content)))
+                    .add(users::Column::Phone.like(format!("%{}%", content))),
+            )
+            .all(&connect)
+            .await?;
+        Ok(user_list
+            .into_iter()
+            .map(|user| UserDto::from(user))
+            .collect())
     }
 }

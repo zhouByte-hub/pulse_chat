@@ -7,5 +7,5 @@ pub struct LoginRequest {
     password: String,
 
     #[serde(rename = "rememberMe")]
-    remember_me: bool
+    remember_me: bool,
 }

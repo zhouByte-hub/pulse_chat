@@ -24,6 +24,9 @@ pub enum PulseError {
 
     #[error("PulseStdError error: {0}")]
     PulseStdError(String),
+
+    #[error("ActixWebError error: {0}")]
+    ActixWebError(#[from] actix_web::error::Error),
 }
 
 impl ResponseError for PulseError {
