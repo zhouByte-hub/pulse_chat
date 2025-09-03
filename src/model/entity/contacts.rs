@@ -9,10 +9,8 @@ pub struct Model {
     pub id: u64,
     pub user_id: u64,
     pub contact_id: u64,
-    pub remark_name: Option<String>,
-    pub group_name: Option<String>,
-    pub is_blocked: Option<i8>,
-    pub created_at: Option<DateTimeUtc>,
+    pub group_name: String,
+    pub created_at: DateTimeUtc,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

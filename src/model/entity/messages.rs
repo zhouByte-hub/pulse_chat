@@ -12,11 +12,11 @@ pub struct Model {
     pub receiver_id: u64,
     #[sea_orm(column_type = "Text")]
     pub content: String,
-    pub message_type: Option<MessageType>,
+    pub message_type: MessageType,
     pub file_url: Option<String>,
     pub file_size: Option<i32>,
-    pub is_read: Option<i8>,
-    pub created_at: Option<DateTimeUtc>,
+    pub is_read: i8,
+    pub created_at: DateTimeUtc,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
