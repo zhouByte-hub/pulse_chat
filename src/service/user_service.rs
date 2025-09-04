@@ -10,7 +10,7 @@ use sea_orm::{ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter, Sel
 pub struct UserService;
 
 impl UserService {
-    pub async fn login(login_data: LoginRequest) -> PulseResult<(u8, String)> {
+    pub async fn login(login_data: LoginRequest, secret: &str) -> PulseResult<(u8, String)> {
         let connect = DatabaseConfig::get_connection()?;
 
         let hash_password = format!("{:X}", md5::compute(login_data.password()));
@@ -20,7 +20,7 @@ impl UserService {
             .one(&connect)
             .await?;
         if let Some(model) = user {
-            let token = PulseClaims::new(model.id).generate_token("secret")?;
+            let token = PulseClaims::new(model.id).generate_token(secret)?;
 
             // 更新登录状态
             let mut user = users::ActiveModel::from(model);
@@ -79,7 +79,7 @@ impl UserService {
         Ok((1, "register success".to_string()))
     }
 
-    pub async fn search_contact(contact_name: String, user_id: u64) -> PulseResult<Vec<UserDto>> {
+    pub async fn search_contact(contact_name: &String, user_id: u64) -> PulseResult<Vec<UserDto>> {
         let connect = DatabaseConfig::get_connection()?;
 
         let user_list = users::Entity::find()
@@ -140,5 +140,40 @@ impl UserService {
             .into_iter()
             .map(|user| UserDto::from(user))
             .collect())
+    }
+
+    pub async fn contact_list(user_id: u64) -> PulseResult<Vec<UserDto>> {
+        let connect = DatabaseConfig::get_connection()?;
+        let contact_list = contacts::Entity::find()
+            .filter(
+                Condition::any()
+                    .add(contacts::Column::UserId.eq(user_id))
+                    .add(contacts::Column::ContactId.eq(user_id)),
+            )
+            .all(&connect)
+            .await?;
+        let contact_id_list = contact_list
+            .into_iter()
+            .map(|contact| contact.contact_id)
+            .collect::<Vec<u64>>();
+
+        let user_list = users::Entity::find()
+            .filter(users::Column::Id.is_in(contact_id_list))
+            .all(&connect)
+            .await?;
+        Ok(user_list
+            .into_iter()
+            .map(|user| UserDto::from(user))
+            .collect())
+    }
+
+
+    pub async fn get_user_info(user_id: u64) -> PulseResult<UserDto> {
+        let connect = DatabaseConfig::get_connection()?;
+        let user = users::Entity::find()
+            .filter(users::Column::Id.eq(user_id))
+            .one(&connect)
+            .await?;
+        Ok(user.map(|user| UserDto::from(user)).unwrap())
     }
 }

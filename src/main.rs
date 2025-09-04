@@ -4,7 +4,7 @@ use crate::{
     utils::result::PulseResponseBody,
 };
 use ::config::{Config, File};
-use actix_web::{App, HttpServer};
+use actix_web::{web, App, HttpServer};
 use serde::{Deserialize, Serialize};
 
 pub(crate) mod config;
@@ -25,9 +25,10 @@ async fn main() -> PulseResult<()> {
     DatabaseConfig::init_from(&config.database).await?;
 
     HttpServer::new(move || {
+        let token_security = config.token.secret.clone();
         let token_filter =
-            TokenFilterFactory::new(config.public_list.clone(), config.token.secret.clone());
-        App::new().configure(user_request_config).wrap(token_filter)
+            TokenFilterFactory::new(config.public_list.clone(), token_security.clone());
+        App::new().app_data(web::Data::new(token_security)).configure(user_request_config).wrap(token_filter)
     })
     .bind("0.0.0.0:9527")?
     .run()

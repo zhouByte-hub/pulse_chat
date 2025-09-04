@@ -6,11 +6,11 @@
         <!-- 侧边栏头部 -->
         <div class="sidebar-header">
           <div class="user-info">
-            <el-avatar :size="36" :src="userAvatar" class="user-avatar">
+            <el-avatar :size="36" class="user-avatar">
               {{ userInitial }}
             </el-avatar>
             <div class="user-details">
-              <div class="user-name">{{ authStore.user?.nickname || '用户' }}</div>
+              <div class="user-name">{{ userInfo.username || '用户' }}</div>
               <div class="user-status">在线</div>
             </div>
           </div>
@@ -28,7 +28,7 @@
             placeholder="搜索联系人..."
             prefix-icon="Search"
             clearable
-            @input="handleSearch"
+            @keyup.enter="handleSearch"
             class="search-input"
           />
         </div>
@@ -143,7 +143,7 @@
                     <div class="message-time">{{ message.time }}</div>
                   </div>
                   <div v-if="message.sent" class="message-avatar message-avatar-sent">
-                    <el-avatar :size="32" :src="userAvatar">
+                    <el-avatar :size="32">
                       {{ userInitial }}
                     </el-avatar>
                   </div>
@@ -206,90 +206,32 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/user'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const router = useRouter()
-const authStore = useAuthStore()
 const messagesContainer = ref(null)
+const userStore = useUserStore()
 
 // 响应式数据
 const activeTab = ref('messages')
 const selectedContact = ref(null)
 const newMessage = ref('')
 const searchQuery = ref('')
+const filteredContacts = ref([])
 
 // 用户信息
-const userAvatar = computed(() => authStore.user?.avatar || '')
-const userInitial = computed(() => authStore.user?.nickname?.charAt(0) || 'U')
+const userInfo = JSON.parse(localStorage.getItem("user"))
+let userInitial = userInfo.username.charAt(0)
+if (userInitial.match(/[a-zA-Z]/)) {
+  userInitial = userInitial.toUpperCase()
+}
 
 // 模拟联系人数据
-const contacts = reactive([
-  {
-    id: 1,
-    name: '张三',
-    avatar: '',
-    lastMessage: '你好，最近怎么样？',
-    time: '10:30',
-    unread: 2,
-    online: true
-  },
-  {
-    id: 2,
-    name: '李四',
-    avatar: '',
-    lastMessage: '明天见！',
-    time: '昨天',
-    unread: 0,
-    online: false
-  },
-  {
-    id: 3,
-    name: '王五',
-    avatar: '',
-    lastMessage: '收到，谢谢',
-    time: '周三',
-    unread: 1,
-    online: true
-  },
-  {
-    id: 4,
-    name: '赵六',
-    avatar: '',
-    lastMessage: '好的，没问题',
-    time: '周一',
-    unread: 0,
-    online: false
-  }
-])
+const contacts = reactive([])
 
 // 消息数据映射
-const messagesMap = reactive({
-  1: [
-    { id: 1, text: '你好！', time: '10:25', sent: false },
-    { id: 2, text: '你好，最近怎么样？', time: '10:26', sent: false },
-    { id: 3, text: '挺好的，你呢？', time: '10:28', sent: true },
-    { id: 4, text: '我也不错，最近在忙项目', time: '10:30', sent: false }
-  ],
-  2: [
-    { id: 1, text: '明天的会议准备好了吗？', time: '昨天 15:30', sent: false },
-    { id: 2, text: '准备好了，明天见！', time: '昨天 15:32', sent: true }
-  ],
-  3: [
-    { id: 1, text: '文件已经发送给你了', time: '周三 14:20', sent: false },
-    { id: 2, text: '收到，谢谢', time: '周三 14:25', sent: true }
-  ]
-})
-
-// 计算属性
-const filteredContacts = computed(() => {
-  if (!searchQuery.value) return contacts
-  
-  return contacts.filter(contact => 
-    contact.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    contact.lastMessage.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
+const messagesMap = reactive({})
 
 const totalUnread = computed(() => {
   return contacts.reduce((sum, contact) => sum + contact.unread, 0)
@@ -360,7 +302,13 @@ const goToProfile = () => {
 }
 
 const handleSearch = () => {
-  // 处理搜索逻辑
+  userStore.searchContact(searchQuery.value).then(res => {
+      if (res.success) {
+
+      }else{
+        
+      }
+  })
 }
 
 onMounted(() => {

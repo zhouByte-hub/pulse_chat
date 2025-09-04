@@ -23,13 +23,13 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const response = await axios.post('/api/user/login', credentials)
-      
       token.value = response.data.data
-      console.log(token.value)
-      
       localStorage.setItem('token', token.value)
       setAuthHeader(token.value)
-      
+
+      let user_response = await axios.get('/api/user/info')
+      localStorage.setItem("user", JSON.stringify(user_response.data.data))
+
       return { success: true }
     } catch (error) {
       return { 
@@ -67,32 +67,32 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 检查认证状态
   const checkAuth = async () => {
-    if (!token.value) return
+    // if (!token.value) return
     
-    try {
-      setAuthHeader(token.value)
-      const response = await axios.get('/api/auth/me')
-      user.value = response.data
-    } catch (error) {
-      logout()
-    }
+    // try {
+    //   setAuthHeader(token.value)
+    //   const response = await axios.get('/api/auth/me')
+    //   user.value = response.data
+    // } catch (error) {
+    //   logout()
+    // }
   }
 
   // 更新用户信息
   const updateProfile = async (profileData) => {
-    loading.value = true
-    try {
-      const response = await axios.put('/api/auth/profile', profileData)
-      user.value = { ...user.value, ...response.data }
-      return { success: true, message: '更新成功' }
-    } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || '更新失败'
-      }
-    } finally {
-      loading.value = false
-    }
+    // loading.value = true
+    // try {
+    //   const response = await axios.put('/api/auth/profile', profileData)
+    //   user.value = { ...user.value, ...response.data }
+    //   return { success: true, message: '更新成功' }
+    // } catch (error) {
+    //   return {
+    //     success: false,
+    //     message: error.response?.data?.message || '更新失败'
+    //   }
+    // } finally {
+    //   loading.value = false
+    // }
   }
 
   return {
