@@ -199,29 +199,64 @@ impl UserService {
     }
 
     pub async fn contact_list(user_id: u64) -> PulseResult<Vec<UserDto>> {
-        let connect = DatabaseConfig::get_connection()?;
+        let connect = Arc::new(DatabaseConfig::get_connection()?);
         let contact_list = contacts::Entity::find()
             .filter(
                 Condition::any()
                     .add(contacts::Column::UserId.eq(user_id))
                     .add(contacts::Column::ContactId.eq(user_id)),
             )
-            .all(&connect)
+            .all(&*connect)
             .await?;
         let contact_id_list = contact_list
             .into_iter()
-            .map(|contact| contact.contact_id)
+            .map(|contact| {
+                if contact.user_id == user_id {
+                    contact.contact_id
+                } else {
+                    contact.user_id
+                }
+            })
             .collect::<Vec<u64>>();
 
         let user_list = users::Entity::find()
             .filter(users::Column::Id.is_in(contact_id_list))
-            .all(&connect)
+            .all(&*connect)
             .await?;
+        let connect_clone = Arc::clone(&connect);
         let list = user_list
             .into_iter()
-            .map(|user| UserDto::from(user, None, None))
+            .map(|user| async {
+                let messages = messages::Entity::find()
+                        .filter(
+                            Condition::all()
+                                .add(messages::Column::ReceiverId.eq(user.id))
+                                .add(messages::Column::SenderId.eq(user_id)),
+                        )
+                        .order_by_desc(messages::Column::CreatedAt)
+                        .all(&*connect_clone)
+                        .await
+                        .unwrap_or_default();
+
+                let last_message = if messages.is_empty() {
+                    Some("尚未聊过天".to_string())
+                } else {
+                    Some(messages.first().unwrap().content.to_string())
+                };
+                let count = messages::Entity::find()
+                    .filter(
+                        Condition::all()
+                            .add(messages::Column::ReceiverId.eq(user_id))
+                            .add(messages::Column::SenderId.eq(user.id)),
+                    )
+                    .count(&*connect_clone)
+                    .await
+                    .unwrap_or_default();
+
+                UserDto::from(user, last_message, Some(count))
+            })
             .collect::<Vec<_>>();
-        Ok(list)
+        Ok(join_all(list).await)
     }
 
     pub async fn get_user_info(user_id: u64) -> PulseResult<UserDto> {

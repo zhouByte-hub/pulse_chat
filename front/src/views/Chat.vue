@@ -6,7 +6,7 @@
         <!-- 侧边栏头部 -->
         <div class="sidebar-header">
           <div class="user-info">
-            <el-avatar :size="36" class="user-avatar">
+            <el-avatar :size="36" class="user-avatar" :src="userInfo.avatar">
               {{ userInitial }}
             </el-avatar>
             <div class="user-details">
@@ -288,8 +288,6 @@ const sendMessage = () => {
       ElMessage.error(res.message)
     }
   })
-
-  
   newMessage.value = ''
   
   // 滚动到底部
@@ -315,17 +313,20 @@ const goToProfile = () => {
 }
 
 const handleSearch = () => {
-  userStore.searchContact(searchQuery.value).then(res => {
+  userStore.searchContact(searchQuery.value.trim()).then(res => {
       if (res.success) {
+        let entity = null
         for(let i of res.data) {
           let flag = false
           for(let j of filteredContacts.value) {
             if(j.id == i.id) {
+              entity = j
               flag = true; break;
             }
           }
           if(!flag) filteredContacts.value.push(i)
         }
+        if (entity) selectContact(entity)
       }else{
         ElMessage.error(res.msg)
       }
@@ -333,10 +334,13 @@ const handleSearch = () => {
 }
 
 onMounted(() => {
-  // 默认选择第一个联系人
-  if (contacts.length > 0) {
-    selectContact(contacts[0])
-  }
+  userStore.contactList().then(res => {
+    if(res.success) {
+      filteredContacts.value = res.data
+    }else{
+      ElMessage.error(res.message)
+    }
+  })
 })
 </script>
 

@@ -12,6 +12,7 @@ pub struct UserDto {
     description: String,
     last_message: String,
     unread_count: u64,
+    avatar: String,
 }
 
 impl UserDto {
@@ -37,6 +38,7 @@ impl UserDto {
             description: user.description.unwrap_or_default(),
             last_message: last_message.unwrap_or_default(),
             unread_count: unread_count.unwrap_or_default(),
+            avatar: user.avatar.unwrap_or_default(),
         }
     }
 }

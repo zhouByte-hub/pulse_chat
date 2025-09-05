@@ -25,7 +25,25 @@ export const useUserStore = defineStore("user", () => {
         }
     }
 
+
+    const contactList = async () => {
+         try {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+            let response = await axios.get('/api/user/contact_list')
+            return {
+                success: true,
+                data: response.data.data
+            }
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || '获取联系人列表失败'
+            }
+        }
+    }
+
     return {
-        searchContact
+        searchContact,
+        contactList
     }
 })
