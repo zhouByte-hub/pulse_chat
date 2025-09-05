@@ -9,11 +9,7 @@ export const useChatStore = defineStore('chat', () => {
   const updateMessageStatus = async (user_id) => {
         try {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-            await axios.get('/api/message/update_status', {
-                params: {
-                    user_id
-                }
-            })
+            await axios.get(`/api/message/update_status/${user_id}`)
             return {
                 success: true,
                 message: '更新消息状态成功'

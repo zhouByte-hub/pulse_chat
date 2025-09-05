@@ -8,7 +8,9 @@ use crate::model::entity::{contacts, messages, users};
 use crate::model::vo::{login_request::LoginRequest, register_request::RegisterRequest};
 use crate::utils::token::PulseClaims;
 use futures_util::future::join_all;
-use sea_orm::{ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, SelectColumns};
+use sea_orm::{
+    ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, SelectColumns,
+};
 
 pub struct UserService;
 
@@ -125,11 +127,16 @@ impl UserService {
                 .into_iter()
                 .map(|user| async {
                     let unread_message = messages::Entity::find()
-                        .filter(Condition::all().add(messages::Column::ReceiverId.eq(user.id)).add(messages::Column::IsRead.eq(0)))
+                        .filter(
+                            Condition::all()
+                                .add(messages::Column::ReceiverId.eq(user.id))
+                                .add(messages::Column::IsRead.eq(0)),
+                        )
                         .order_by_desc(messages::Column::CreatedAt)
                         .all(&*connect_clone)
-                        .await.unwrap_or_default();
-                    
+                        .await
+                        .unwrap_or_default();
+
                     let last_message = if unread_message.is_empty() {
                         Some("尚未聊过天".to_string())
                     } else {
@@ -157,13 +164,18 @@ impl UserService {
         let connect_clone = Arc::clone(&connect);
         let list = user_list
             .into_iter()
-            .map(|user| async{
+            .map(|user| async {
                 let unread_message = messages::Entity::find()
-                        .filter(Condition::all().add(messages::Column::ReceiverId.eq(user.id)).add(messages::Column::IsRead.eq(0)))
-                        .order_by_desc(messages::Column::CreatedAt)
-                        .all(&*connect_clone)
-                        .await.unwrap_or_default();
-                    
+                    .filter(
+                        Condition::all()
+                            .add(messages::Column::ReceiverId.eq(user.id))
+                            .add(messages::Column::IsRead.eq(0)),
+                    )
+                    .order_by_desc(messages::Column::CreatedAt)
+                    .all(&*connect_clone)
+                    .await
+                    .unwrap_or_default();
+
                 let last_message = if unread_message.is_empty() {
                     Some("尚未聊过天".to_string())
                 } else {
@@ -196,13 +208,18 @@ impl UserService {
             .await?;
         let list = user_list
             .into_iter()
-            .map(|user| async{
+            .map(|user| async {
                 let unread_message = messages::Entity::find()
-                    .filter(Condition::all().add(messages::Column::ReceiverId.eq(user.id)).add(messages::Column::IsRead.eq(0)))
+                    .filter(
+                        Condition::all()
+                            .add(messages::Column::ReceiverId.eq(user.id))
+                            .add(messages::Column::IsRead.eq(0)),
+                    )
                     .order_by_desc(messages::Column::CreatedAt)
                     .all(&connect)
-                    .await.unwrap_or_default();
-                
+                    .await
+                    .unwrap_or_default();
+
                 let last_message = if unread_message.is_empty() {
                     Some("尚未聊过天".to_string())
                 } else {

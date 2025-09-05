@@ -1,7 +1,7 @@
 use crate::model::entity::sea_orm_active_enums::Status;
 use crate::model::entity::users;
-use serde::{Deserialize, Serialize};
 use derive_getters::Getters;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Getters)]
 pub struct UserDto {
@@ -15,7 +15,11 @@ pub struct UserDto {
 }
 
 impl UserDto {
-    pub fn from(user: users::Model, last_message: Option<String>, unread_count: Option<u64>) -> Self {
+    pub fn from(
+        user: users::Model,
+        last_message: Option<String>,
+        unread_count: Option<u64>,
+    ) -> Self {
         let status = match user.status {
             Some(status) => match status {
                 Status::Online => "online".to_string(),

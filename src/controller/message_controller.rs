@@ -1,19 +1,22 @@
-use actix_web::HttpRequest;
-use actix_web::{get, post, web};
 use crate::PulseResponse;
 use crate::PulseResponseBody;
-use crate::service::message_service::MessageService;
 use crate::model::vo::message::Message;
+use crate::service::message_service::MessageService;
 use actix_web::HttpMessage;
+use actix_web::HttpRequest;
+use actix_web::{get, post, web};
 
 #[get("/update_status/{user_id}")]
-pub async fn update_message_status(req: HttpRequest, user_id: web::Path<u64>) -> PulseResponse<u64> {
+pub async fn update_message_status(
+    req: HttpRequest,
+    user_id: web::Path<u64>,
+) -> PulseResponse<u64> {
     let extensions = req.extensions_mut();
     let send_id = extensions
         .get::<u64>()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("无法获取用户ID"))?;
     let receive_id = user_id.into_inner();
-    let result = MessageService::update_message_status(receive_id).await?;
+    let result = MessageService::update_message_status(*send_id, receive_id).await?;
     Ok(PulseResponseBody::success(result))
 }
 
@@ -23,10 +26,9 @@ pub async fn send_message(req: HttpRequest, message: web::Json<Message>) -> Puls
     let user_id = extensions
         .get::<u64>()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("无法获取用户ID"))?;
-    let result = MessageService::send_message(*user_id, & message.into_inner()).await?;
+    let result = MessageService::send_message(*user_id, &message.into_inner()).await?;
     Ok(PulseResponseBody::success(result))
 }
-
 
 pub fn message_request_config(service_config: &mut web::ServiceConfig) {
     let scope = web::scope("/api/message")

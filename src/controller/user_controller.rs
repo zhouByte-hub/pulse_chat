@@ -5,7 +5,10 @@ use crate::{PulseResponse, service::user_service::UserService, utils::result::Pu
 use actix_web::{HttpMessage, HttpRequest, get, post, web};
 
 #[post("/login")]
-pub async fn user_login(login_data: web::Json<LoginRequest>, token_security: web::Data<String>) -> PulseResponse<String> {
+pub async fn user_login(
+    login_data: web::Json<LoginRequest>,
+    token_security: web::Data<String>,
+) -> PulseResponse<String> {
     let login_token = UserService::login(login_data.into_inner(), &token_security).await?;
     if login_token.0 == 0 {
         return Ok(PulseResponseBody::error(login_token.1));

@@ -52,14 +52,12 @@ impl PulseClaims {
     }
 }
 
-
 #[cfg(test)]
-mod test{
+mod test {
     use crate::utils::token::PulseClaims;
 
-
     #[test]
-    fn encode_test(){
+    fn encode_test() {
         let claims = PulseClaims::new(1);
         match claims.generate_token("dev_123456") {
             Ok(token) => {
@@ -72,7 +70,7 @@ mod test{
     }
 
     #[test]
-    fn decode_test(){
+    fn decode_test() {
         let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwdWxzZV9jaGF0Iiwic3ViIjoicHVsc2VfY2hhdCIsImV4cCI6MTc1Njk5Nzk4NywiaWF0IjoxNzU2OTk0Mzg3LCJ1c2VyX2lkIjoxfQ.hjb_8GAWc7aiNCfPSVHKZ7A6yzvNIa0XdbXoZn5khz8";
         match PulseClaims::verify_token(token, "dev_123456") {
             Ok(user_id) => {
