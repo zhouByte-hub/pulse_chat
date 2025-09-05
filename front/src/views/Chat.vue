@@ -198,18 +198,6 @@
           </div>
         </div>
       </div>
-
-      <!-- <div>
-        <el-popconfirm
-          width="220"
-          confirm-button-text="OK"
-          cancel-button-text="No, Thanks"
-        >
-          <template #reference>
-            <el-button>Delete</el-button>
-          </template>
-        </el-popconfirm>
-      </div> -->
     </div>
   </DefaultLayout>
 </template>
@@ -259,10 +247,8 @@ const currentMessages = computed(() => {
 // 方法
 const selectContact = (contact) => {
   selectedContact.value = contact
-  contact.unread = 0
-  chatStore.updateMessageStatus(contact.id).then(res => {
-    console.log(res.data)
-  })
+  contact.unread_count = 0
+  chatStore.updateMessageStatus(contact.id)
   // 滚动到底部
   nextTick(() => {
     scrollToBottom()

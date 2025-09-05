@@ -9,7 +9,8 @@ use crate::model::vo::{login_request::LoginRequest, register_request::RegisterRe
 use crate::utils::token::PulseClaims;
 use futures_util::future::join_all;
 use sea_orm::{
-    ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, SelectColumns,
+    ActiveValue, ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+    SelectColumns,
 };
 
 pub struct UserService;
@@ -126,23 +127,33 @@ impl UserService {
                 .await?
                 .into_iter()
                 .map(|user| async {
-                    let unread_message = messages::Entity::find()
+                    let messages = messages::Entity::find()
                         .filter(
                             Condition::all()
                                 .add(messages::Column::ReceiverId.eq(user.id))
-                                .add(messages::Column::IsRead.eq(0)),
+                                .add(messages::Column::SenderId.eq(user_id)),
                         )
                         .order_by_desc(messages::Column::CreatedAt)
                         .all(&*connect_clone)
                         .await
                         .unwrap_or_default();
 
-                    let last_message = if unread_message.is_empty() {
+                    let last_message = if messages.is_empty() {
                         Some("尚未聊过天".to_string())
                     } else {
-                        Some(unread_message.last().unwrap().content.to_string())
+                        Some(messages.first().unwrap().content.to_string())
                     };
-                    UserDto::from(user, last_message, Some(unread_message.len() as u64))
+                    let count = messages::Entity::find()
+                        .filter(
+                            Condition::all()
+                                .add(messages::Column::ReceiverId.eq(user_id))
+                                .add(messages::Column::SenderId.eq(user.id)),
+                        )
+                        .count(&*connect_clone)
+                        .await
+                        .unwrap_or_default();
+
+                    UserDto::from(user, last_message, Some(count))
                 })
                 .collect::<Vec<_>>();
             search_result = join_all(temp).await;
@@ -165,7 +176,7 @@ impl UserService {
         let list = user_list
             .into_iter()
             .map(|user| async {
-                let unread_message = messages::Entity::find()
+                let messages = messages::Entity::find()
                     .filter(
                         Condition::all()
                             .add(messages::Column::ReceiverId.eq(user.id))
@@ -176,12 +187,12 @@ impl UserService {
                     .await
                     .unwrap_or_default();
 
-                let last_message = if unread_message.is_empty() {
+                let last_message = if messages.is_empty() {
                     Some("尚未聊过天".to_string())
                 } else {
-                    Some(unread_message.last().unwrap().content.to_string())
+                    Some(messages.first().unwrap().content.to_string())
                 };
-                UserDto::from(user, last_message, Some(unread_message.len() as u64))
+                UserDto::from(user, last_message, None)
             })
             .collect::<Vec<_>>();
         Ok(join_all(list).await)
@@ -208,27 +219,9 @@ impl UserService {
             .await?;
         let list = user_list
             .into_iter()
-            .map(|user| async {
-                let unread_message = messages::Entity::find()
-                    .filter(
-                        Condition::all()
-                            .add(messages::Column::ReceiverId.eq(user.id))
-                            .add(messages::Column::IsRead.eq(0)),
-                    )
-                    .order_by_desc(messages::Column::CreatedAt)
-                    .all(&connect)
-                    .await
-                    .unwrap_or_default();
-
-                let last_message = if unread_message.is_empty() {
-                    Some("尚未聊过天".to_string())
-                } else {
-                    Some(unread_message.last().unwrap().content.to_string())
-                };
-                UserDto::from(user, last_message, Some(unread_message.len() as u64))
-            })
+            .map(|user| UserDto::from(user, None, None))
             .collect::<Vec<_>>();
-        Ok(join_all(list).await)
+        Ok(list)
     }
 
     pub async fn get_user_info(user_id: u64) -> PulseResult<UserDto> {

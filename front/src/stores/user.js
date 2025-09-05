@@ -6,7 +6,6 @@ export const useUserStore = defineStore("user", () => {
     const token = ref(localStorage.getItem('token') || null)
 
     const searchContact = async (contactName) => {
-        console.log(contactName)
         try {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
             let response = await axios.get('/api/user/search_contact', {

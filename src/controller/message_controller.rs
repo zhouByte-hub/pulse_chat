@@ -12,11 +12,10 @@ pub async fn update_message_status(
     user_id: web::Path<u64>,
 ) -> PulseResponse<u64> {
     let extensions = req.extensions_mut();
-    let send_id = extensions
+    let receive_id = extensions
         .get::<u64>()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("无法获取用户ID"))?;
-    let receive_id = user_id.into_inner();
-    let result = MessageService::update_message_status(*send_id, receive_id).await?;
+    let result = MessageService::update_message_status(user_id.into_inner(), *receive_id).await?;
     Ok(PulseResponseBody::success(result))
 }
 
