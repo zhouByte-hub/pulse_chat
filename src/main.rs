@@ -1,6 +1,7 @@
 use crate::{
     config::{db_config::DatabaseConfig, error_config::PulseError, filter::TokenFilterFactory},
     controller::user_controller::user_request_config,
+    controller::message_controller::message_request_config,
     utils::result::PulseResponseBody,
 };
 use ::config::{Config, File};
@@ -28,7 +29,10 @@ async fn main() -> PulseResult<()> {
         let token_security = config.token.secret.clone();
         let token_filter =
             TokenFilterFactory::new(config.public_list.clone(), token_security.clone());
-        App::new().app_data(web::Data::new(token_security)).configure(user_request_config).wrap(token_filter)
+        App::new().app_data(web::Data::new(token_security))
+            .configure(user_request_config)
+            .configure(message_request_config)
+            .wrap(token_filter)
     })
     .bind("0.0.0.0:9527")?
     .run()

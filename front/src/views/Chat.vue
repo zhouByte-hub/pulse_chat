@@ -29,8 +29,7 @@
             prefix-icon="Search"
             clearable
             @keyup.enter="handleSearch"
-            class="search-input"
-          />
+            class="search-input"/>
         </div>
 
         <!-- 标签导航 -->
@@ -73,19 +72,19 @@
             >
               <div class="contact-avatar-wrapper">
                 <el-avatar :size="44" :src="contact.avatar" class="contact-avatar">
-                  {{ contact.name.charAt(0) }}
+                  {{ contact.username.charAt(0).toUpperCase() }}
                 </el-avatar>
-                <div v-if="contact.online" class="online-indicator"></div>
+                <div v-if="contact.status == 'online'" class="online-indicator"></div>
               </div>
               <div class="contact-info">
                 <div class="contact-header">
-                  <span class="contact-name">{{ contact.name }}</span>
-                  <span class="contact-time">{{ contact.time }}</span>
+                  <span class="contact-name">{{ contact.username }}</span>
+                  <span class="contact-time">{{ new Date(new Date().getTime()).toLocaleString() }}</span>
                 </div>
-                <div class="contact-message">{{ contact.lastMessage }}</div>
+                <div class="contact-message">{{ contact.last_message }}</div>
               </div>
               <div class="contact-badge-wrapper">
-                <el-badge v-if="contact.unread" :value="contact.unread" />
+                <el-badge v-if="contact.unread_count != 0" :value="contact.unread_count" />
               </div>
             </div>
           </el-scrollbar>
@@ -99,13 +98,13 @@
           <div class="chat-header">
             <div class="chat-user-info">
               <el-avatar :size="40" :src="selectedContact.avatar" class="chat-avatar">
-                {{ selectedContact.name.charAt(0) }}
+                {{ selectedContact.username.charAt(0) }}
               </el-avatar>
               <div class="chat-user-details">
-                <div class="chat-user-name">{{ selectedContact.name }}</div>
+                <div class="chat-user-name">{{ selectedContact.username }}</div>
                 <div class="chat-user-status">
-                  <div class="status-dot" :class="{ online: selectedContact.online }"></div>
-                  {{ selectedContact.online ? '在线' : '离线' }}
+                  <div class="status-dot" :class="{ online: selectedContact.status == 'online' }"></div>
+                  {{ selectedContact.status == 'online' ? '在线' : '离线' }}
                 </div>
               </div>
             </div>
@@ -199,6 +198,18 @@
           </div>
         </div>
       </div>
+
+      <!-- <div>
+        <el-popconfirm
+          width="220"
+          confirm-button-text="OK"
+          cancel-button-text="No, Thanks"
+        >
+          <template #reference>
+            <el-button>Delete</el-button>
+          </template>
+        </el-popconfirm>
+      </div> -->
     </div>
   </DefaultLayout>
 </template>
@@ -207,11 +218,14 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useChatStore } from '@/stores/chat'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const router = useRouter()
 const messagesContainer = ref(null)
 const userStore = useUserStore()
+const chatStore = useChatStore()
+import { ElMessage } from 'element-plus'
 
 // 响应式数据
 const activeTab = ref('messages')
@@ -245,9 +259,10 @@ const currentMessages = computed(() => {
 // 方法
 const selectContact = (contact) => {
   selectedContact.value = contact
-  // 清除未读消息
   contact.unread = 0
-  
+  chatStore.updateMessageStatus(contact.id).then(res => {
+    console.log(res.data)
+  })
   // 滚动到底部
   nextTick(() => {
     scrollToBottom()
@@ -276,6 +291,18 @@ const sendMessage = () => {
     contact.lastMessage = message.text
     contact.time = message.time
   }
+
+  chatStore.sendMessage({
+    receive_id: selectedContact.value.id,
+    content: message.text
+  }).then(res => {
+    if(res.success) {
+      ElMessage.success(res.message)
+    }else{
+      ElMessage.error(res.message)
+    }
+  })
+
   
   newMessage.value = ''
   
@@ -304,9 +331,17 @@ const goToProfile = () => {
 const handleSearch = () => {
   userStore.searchContact(searchQuery.value).then(res => {
       if (res.success) {
-
+        for(let i of res.data) {
+          let flag = false
+          for(let j of filteredContacts.value) {
+            if(j.id == i.id) {
+              flag = true; break;
+            }
+          }
+          if(!flag) filteredContacts.value.push(i)
+        }
       }else{
-        
+        ElMessage.error(res.msg)
       }
   })
 }

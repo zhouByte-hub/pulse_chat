@@ -9,11 +9,13 @@ pub struct UserDto {
     username: String,
     status: String,
     address: String,
-    description: String
+    description: String,
+    last_message: String,
+    unread_count: u64,
 }
 
-impl From<users::Model> for UserDto {
-    fn from(user: users::Model) -> Self {
+impl UserDto {
+    pub fn from(user: users::Model, last_message: Option<String>, unread_count: Option<u64>) -> Self {
         let status = match user.status {
             Some(status) => match status {
                 Status::Online => "online".to_string(),
@@ -29,6 +31,8 @@ impl From<users::Model> for UserDto {
             status: status,
             address: user.address.unwrap_or_default(),
             description: user.description.unwrap_or_default(),
+            last_message: last_message.unwrap_or_default(),
+            unread_count: unread_count.unwrap_or_default(),
         }
     }
 }

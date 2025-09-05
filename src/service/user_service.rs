@@ -1,11 +1,14 @@
+use std::sync::Arc;
+
 use crate::PulseResult;
 use crate::config::db_config::DatabaseConfig;
 use crate::model::dto::user_dto::UserDto;
 use crate::model::entity::sea_orm_active_enums::Status;
-use crate::model::entity::{contacts, users};
+use crate::model::entity::{contacts, messages, users};
 use crate::model::vo::{login_request::LoginRequest, register_request::RegisterRequest};
 use crate::utils::token::PulseClaims;
-use sea_orm::{ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter, SelectColumns};
+use futures_util::future::join_all;
+use sea_orm::{ActiveValue, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, SelectColumns};
 
 pub struct UserService;
 
@@ -80,7 +83,7 @@ impl UserService {
     }
 
     pub async fn search_contact(contact_name: &String, user_id: u64) -> PulseResult<Vec<UserDto>> {
-        let connect = DatabaseConfig::get_connection()?;
+        let connect = Arc::new(DatabaseConfig::get_connection()?);
 
         let user_list = users::Entity::find()
             .select_column(users::Column::Id)
@@ -90,7 +93,7 @@ impl UserService {
                     .add(users::Column::Nickname.like(format!("%{}%", contact_name)))
                     .add(users::Column::Phone.like(format!("%{}%", contact_name))),
             )
-            .all(&connect)
+            .all(&*connect)
             .await?;
 
         let mut search_result: Vec<UserDto> = Vec::new();
@@ -104,7 +107,7 @@ impl UserService {
                         .add(contacts::Column::UserId.eq(user_id))
                         .add(contacts::Column::ContactId.is_in(contact_list)),
                 )
-                .all(&connect)
+                .all(&*connect)
                 .await?;
 
             if contact_list.is_empty() {
@@ -114,19 +117,34 @@ impl UserService {
                 .iter()
                 .map(|item| item.contact_id)
                 .collect::<Vec<u64>>();
-            search_result = users::Entity::find()
+            let connect_clone = Arc::clone(&connect);
+            let temp = users::Entity::find()
                 .filter(users::Column::Id.is_in(contact_id_list))
-                .all(&connect)
+                .all(&*connect)
                 .await?
                 .into_iter()
-                .map(|user| UserDto::from(user))
-                .collect();
+                .map(|user| async {
+                    let unread_message = messages::Entity::find()
+                        .filter(Condition::all().add(messages::Column::ReceiverId.eq(user.id)).add(messages::Column::IsRead.eq(0)))
+                        .order_by_desc(messages::Column::CreatedAt)
+                        .all(&*connect_clone)
+                        .await.unwrap_or_default();
+                    
+                    let last_message = if unread_message.is_empty() {
+                        Some("尚未聊过天".to_string())
+                    } else {
+                        Some(unread_message.last().unwrap().content.to_string())
+                    };
+                    UserDto::from(user, last_message, Some(unread_message.len() as u64))
+                })
+                .collect::<Vec<_>>();
+            search_result = join_all(temp).await;
         }
         Ok(search_result)
     }
 
     pub async fn search_user(content: String) -> PulseResult<Vec<UserDto>> {
-        let connect = DatabaseConfig::get_connection()?;
+        let connect = Arc::new(DatabaseConfig::get_connection()?);
         let user_list = users::Entity::find()
             .filter(
                 Condition::any()
@@ -134,12 +152,27 @@ impl UserService {
                     .add(users::Column::Nickname.like(format!("%{}%", content)))
                     .add(users::Column::Phone.like(format!("%{}%", content))),
             )
-            .all(&connect)
+            .all(&*connect)
             .await?;
-        Ok(user_list
+        let connect_clone = Arc::clone(&connect);
+        let list = user_list
             .into_iter()
-            .map(|user| UserDto::from(user))
-            .collect())
+            .map(|user| async{
+                let unread_message = messages::Entity::find()
+                        .filter(Condition::all().add(messages::Column::ReceiverId.eq(user.id)).add(messages::Column::IsRead.eq(0)))
+                        .order_by_desc(messages::Column::CreatedAt)
+                        .all(&*connect_clone)
+                        .await.unwrap_or_default();
+                    
+                let last_message = if unread_message.is_empty() {
+                    Some("尚未聊过天".to_string())
+                } else {
+                    Some(unread_message.last().unwrap().content.to_string())
+                };
+                UserDto::from(user, last_message, Some(unread_message.len() as u64))
+            })
+            .collect::<Vec<_>>();
+        Ok(join_all(list).await)
     }
 
     pub async fn contact_list(user_id: u64) -> PulseResult<Vec<UserDto>> {
@@ -161,12 +194,25 @@ impl UserService {
             .filter(users::Column::Id.is_in(contact_id_list))
             .all(&connect)
             .await?;
-        Ok(user_list
+        let list = user_list
             .into_iter()
-            .map(|user| UserDto::from(user))
-            .collect())
+            .map(|user| async{
+                let unread_message = messages::Entity::find()
+                    .filter(Condition::all().add(messages::Column::ReceiverId.eq(user.id)).add(messages::Column::IsRead.eq(0)))
+                    .order_by_desc(messages::Column::CreatedAt)
+                    .all(&connect)
+                    .await.unwrap_or_default();
+                
+                let last_message = if unread_message.is_empty() {
+                    Some("尚未聊过天".to_string())
+                } else {
+                    Some(unread_message.last().unwrap().content.to_string())
+                };
+                UserDto::from(user, last_message, Some(unread_message.len() as u64))
+            })
+            .collect::<Vec<_>>();
+        Ok(join_all(list).await)
     }
-
 
     pub async fn get_user_info(user_id: u64) -> PulseResult<UserDto> {
         let connect = DatabaseConfig::get_connection()?;
@@ -174,6 +220,6 @@ impl UserService {
             .filter(users::Column::Id.eq(user_id))
             .one(&connect)
             .await?;
-        Ok(user.map(|user| UserDto::from(user)).unwrap())
+        Ok(user.map(|user| UserDto::from(user, None, None)).unwrap())
     }
 }
