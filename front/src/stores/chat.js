@@ -38,9 +38,26 @@ export const useChatStore = defineStore('chat', () => {
         }
     }
 
+    const historyMessage = async (receive_id) => {
+        try {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+            let response = await axios.get(`/api/message/history/${receive_id}`)
+            return {
+                success: true,
+                data: response.data.data
+            }
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || '获取对话记录失败'
+            }
+        }
+    }
+
 
   return {
     updateMessageStatus,
-    sendMessage
+    sendMessage,
+    historyMessage
   }
 })

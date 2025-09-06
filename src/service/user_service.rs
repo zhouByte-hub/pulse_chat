@@ -228,15 +228,23 @@ impl UserService {
             .into_iter()
             .map(|user| async {
                 let messages = messages::Entity::find()
-                        .filter(
-                            Condition::all()
-                                .add(messages::Column::ReceiverId.eq(user.id))
-                                .add(messages::Column::SenderId.eq(user_id)),
-                        )
-                        .order_by_desc(messages::Column::CreatedAt)
-                        .all(&*connect_clone)
-                        .await
-                        .unwrap_or_default();
+                    .filter(
+                        Condition::any()
+                            .add(
+                                Condition::all()
+                                    .add(messages::Column::ReceiverId.eq(user.id))
+                                    .add(messages::Column::SenderId.eq(user_id)),
+                            )
+                            .add(
+                                Condition::all()
+                                    .add(messages::Column::SenderId.eq(user.id))
+                                    .add(messages::Column::ReceiverId.eq(user_id)),
+                            ),
+                    )
+                    .order_by_desc(messages::Column::CreatedAt)
+                    .all(&*connect_clone)
+                    .await
+                    .unwrap_or_default();
 
                 let last_message = if messages.is_empty() {
                     Some("尚未聊过天".to_string())
@@ -245,9 +253,19 @@ impl UserService {
                 };
                 let count = messages::Entity::find()
                     .filter(
-                        Condition::all()
-                            .add(messages::Column::ReceiverId.eq(user_id))
-                            .add(messages::Column::SenderId.eq(user.id)),
+                        Condition::all().add(messages::Column::IsRead.eq(0)).add(
+                            Condition::any()
+                                .add(
+                                    Condition::all()
+                                        .add(messages::Column::ReceiverId.eq(user_id))
+                                        .add(messages::Column::SenderId.eq(user.id)),
+                                )
+                                .add(
+                                    Condition::all()
+                                        .add(messages::Column::SenderId.eq(user_id))
+                                        .add(messages::Column::ReceiverId.eq(user.id)),
+                                ),
+                        ),
                     )
                     .count(&*connect_clone)
                     .await

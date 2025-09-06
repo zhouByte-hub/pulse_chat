@@ -128,22 +128,22 @@
                 <div 
                   v-for="message in currentMessages" 
                   :key="message.id"
-                  :class="['message-group', { 'message-sent': message.sent }]"
+                  :class="['message-group', { 'message-sent': message.is_send }]"
                 >
-                  <div v-if="!message.sent" class="message-avatar">
+                  <div v-if="!message.is_send" class="message-avatar">
                     <el-avatar :size="32" :src="selectedContact.avatar">
-                      {{ selectedContact.name.charAt(0) }}
+                      {{ selectedContact.username.charAt(0) }}
                     </el-avatar>
                   </div>
                   <div class="message-content">
                     <div class="message-bubble">
-                      <div class="message-text">{{ message.text }}</div>
+                      <div class="message-text">{{ message.content }}</div>
                     </div>
-                    <div class="message-time">{{ message.time }}</div>
+                    <div class="message-time">{{ message.create_at }}</div>
                   </div>
-                  <div v-if="message.sent" class="message-avatar message-avatar-sent">
-                    <el-avatar :size="32">
-                      {{ userInitial }}
+                  <div v-if="message.is_send" class="message-avatar message-avatar-sent">
+                   <el-avatar :size="32" :src="userInfo.avatar">
+                      {{ userInfo.username.charAt(0) }}
                     </el-avatar>
                   </div>
                 </div>
@@ -203,7 +203,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useChatStore } from '@/stores/chat'
@@ -229,29 +229,27 @@ if (userInitial.match(/[a-zA-Z]/)) {
   userInitial = userInitial.toUpperCase()
 }
 
-// 模拟联系人数据
 const contacts = reactive([])
-
-// 消息数据映射
-const messagesMap = reactive({})
-
 const totalUnread = computed(() => {
   return contacts.reduce((sum, contact) => sum + contact.unread, 0)
 })
 
-const currentMessages = computed(() => {
-  if (!selectedContact.value) return []
-  return messagesMap[selectedContact.value.id] || []
-})
+const currentMessages = ref([])
 
 // 方法
 const selectContact = (contact) => {
   selectedContact.value = contact
   contact.unread_count = 0
-  chatStore.updateMessageStatus(contact.id)
-  // 滚动到底部
-  nextTick(() => {
-    scrollToBottom()
+  chatStore.historyMessage(selectedContact.value.id).then(res => {
+    if(res.success) {
+      currentMessages.value = res.data
+      // 滚动到底部
+      nextTick(() => {
+        scrollToBottom()
+      })
+    }else{
+      ElMessage.error(res.message)
+    }
   })
 }
 
@@ -265,16 +263,11 @@ const sendMessage = () => {
     sent: true
   }
   
-  // 添加消息到对应联系人
-  if (!messagesMap[selectedContact.value.id]) {
-    messagesMap[selectedContact.value.id] = []
-  }
-  messagesMap[selectedContact.value.id].push(message)
-  
+
   // 更新联系人最后消息
-  const contact = contacts.find(c => c.id === selectedContact.value.id)
+  const contact = filteredContacts.value.find(c => c.id === selectedContact.value.id)
   if (contact) {
-    contact.lastMessage = message.text
+    contact.last_message = message.text
     contact.time = message.time
   }
 
@@ -284,25 +277,36 @@ const sendMessage = () => {
   }).then(res => {
     if(res.success) {
       ElMessage.success(res.message)
+      chatStore.historyMessage(selectedContact.value.id).then(res => {
+        if(res.success) {
+          currentMessages.value = res.data
+          // 滚动到底部
+          nextTick(() => {
+            scrollToBottom()
+          })
+        }else{
+          ElMessage.error(res.message)
+        }
+      })
     }else{
       ElMessage.error(res.message)
     }
   })
+
   newMessage.value = ''
-  
-  // 滚动到底部
-  nextTick(() => {
-    scrollToBottom()
-  })
 }
 
 const scrollToBottom = () => {
   nextTick(() => {
     const container = messagesContainer.value
-    if (container && container.$el) {
-      const scrollWrapper = container.$el.querySelector('.el-scrollbar__wrap')
-      if (scrollWrapper) {
-        scrollWrapper.scrollTop = scrollWrapper.scrollHeight
+    if (container) {
+      // 使用Element Plus的el-scrollbar API
+      const scrollbar = container.querySelector('.el-scrollbar')
+      if (scrollbar) {
+        const wrap = scrollbar.querySelector('.el-scrollbar__wrap')
+        if (wrap) {
+          wrap.scrollTop = wrap.scrollHeight
+        }
       }
     }
   })
@@ -328,20 +332,35 @@ const handleSearch = () => {
         }
         if (entity) selectContact(entity)
       }else{
-        ElMessage.error(res.msg)
+        ElMessage.error(res.message)
+        // 清除认证状态并跳转到登录页
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        router.push('/login')
       }
   })
 }
 
 onMounted(() => {
   userStore.contactList().then(res => {
-    if(res.success) {
-      filteredContacts.value = res.data
-    }else{
-      ElMessage.error(res.message)
-    }
-  })
+        if(res.success) {
+          filteredContacts.value = res.data
+        }else{
+          ElMessage.error(res.message)
+          // 清除认证状态并跳转到登录页
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          router.push('/login')
+        }
+      })
 })
+
+// 监听消息变化，自动滚动到底部
+watch(currentMessages, () => {
+  nextTick(() => {
+    scrollToBottom()
+  })
+}, { deep: true })
 </script>
 
 <style scoped>
@@ -553,6 +572,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .chat-header {
@@ -562,6 +582,7 @@ onMounted(() => {
   padding: 20px 24px;
   border-bottom: 1px solid #e4e7ed;
   background: #ffffff;
+  flex-shrink: 0;
 }
 
 .chat-user-info {
@@ -621,14 +642,18 @@ onMounted(() => {
 
 .messages-container {
   flex: 1;
+  overflow: hidden;
   padding: 0;
   background: #f8f9fa;
+  position: relative;
 }
 
 .messages-wrapper {
-  padding: 20px 24px;
-  min-height: 100%;
-}
+    padding: 20px 24px 120px 24px;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
 
 .message-group {
   display: flex;
@@ -706,6 +731,12 @@ onMounted(() => {
   padding: 20px 24px;
   background: #ffffff;
   border-top: 1px solid #e4e7ed;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 .input-toolbar {
