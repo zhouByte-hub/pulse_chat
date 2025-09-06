@@ -79,7 +79,7 @@
               <div class="contact-info">
                 <div class="contact-header">
                   <span class="contact-name">{{ contact.username }}</span>
-                  <span class="contact-time">{{ new Date(new Date().getTime()).toLocaleString() }}</span>
+                  <span class="contact-time">{{ contact.time }}</span>
                 </div>
                 <div class="contact-message">{{ contact.last_message }}</div>
               </div>

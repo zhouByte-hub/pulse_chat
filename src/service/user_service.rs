@@ -139,9 +139,10 @@ impl UserService {
                         .unwrap_or_default();
 
                     let last_message = if messages.is_empty() {
-                        Some("尚未聊过天".to_string())
+                        (Some("尚未聊过天".to_string()), None)
                     } else {
-                        Some(messages.first().unwrap().content.to_string())
+                        let first = messages.first().unwrap();
+                        (Some(first.content.to_string()), Some(first.created_at))
                     };
                     let count = messages::Entity::find()
                         .filter(
@@ -153,7 +154,7 @@ impl UserService {
                         .await
                         .unwrap_or_default();
 
-                    UserDto::from(user, last_message, Some(count))
+                    UserDto::from(user, last_message.0, Some(count), last_message.1)
                 })
                 .collect::<Vec<_>>();
             search_result = join_all(temp).await;
@@ -188,11 +189,12 @@ impl UserService {
                     .unwrap_or_default();
 
                 let last_message = if messages.is_empty() {
-                    Some("尚未聊过天".to_string())
+                    (Some("尚未聊过天".to_string()), None)
                 } else {
-                    Some(messages.first().unwrap().content.to_string())
+                    let first = messages.first().unwrap();
+                    (Some(first.content.to_string()), Some(first.created_at))
                 };
-                UserDto::from(user, last_message, None)
+                UserDto::from(user, last_message.0, None, last_message.1)
             })
             .collect::<Vec<_>>();
         Ok(join_all(list).await)
@@ -247,9 +249,10 @@ impl UserService {
                     .unwrap_or_default();
 
                 let last_message = if messages.is_empty() {
-                    Some("尚未聊过天".to_string())
+                    (Some("尚未聊过天".to_string()), None)
                 } else {
-                    Some(messages.first().unwrap().content.to_string())
+                    let first = messages.first().unwrap();
+                    (Some(first.content.to_string()), Some(first.created_at))
                 };
                 let count = messages::Entity::find()
                     .filter(
@@ -271,7 +274,7 @@ impl UserService {
                     .await
                     .unwrap_or_default();
 
-                UserDto::from(user, last_message, Some(count))
+                UserDto::from(user, last_message.0, Some(count), last_message.1)
             })
             .collect::<Vec<_>>();
         Ok(join_all(list).await)
@@ -283,6 +286,8 @@ impl UserService {
             .filter(users::Column::Id.eq(user_id))
             .one(&connect)
             .await?;
-        Ok(user.map(|user| UserDto::from(user, None, None)).unwrap())
+        Ok(user
+            .map(|user| UserDto::from(user, None, None, None))
+            .unwrap())
     }
 }

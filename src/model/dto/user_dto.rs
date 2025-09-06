@@ -1,6 +1,8 @@
 use crate::model::entity::sea_orm_active_enums::Status;
 use crate::model::entity::users;
+use crate::utils::datetime_format::{deserialize_datetime_utc, serialize_datetime_utc};
 use derive_getters::Getters;
+use sea_orm::prelude::DateTimeUtc;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Getters)]
@@ -13,6 +15,10 @@ pub struct UserDto {
     last_message: String,
     unread_count: u64,
     avatar: String,
+
+    #[serde(serialize_with = "serialize_datetime_utc")]
+    #[serde(deserialize_with = "deserialize_datetime_utc")]
+    pub time: DateTimeUtc,
 }
 
 impl UserDto {
@@ -20,6 +26,7 @@ impl UserDto {
         user: users::Model,
         last_message: Option<String>,
         unread_count: Option<u64>,
+        time: Option<DateTimeUtc>,
     ) -> Self {
         let status = match user.status {
             Some(status) => match status {
@@ -39,6 +46,7 @@ impl UserDto {
             last_message: last_message.unwrap_or_default(),
             unread_count: unread_count.unwrap_or_default(),
             avatar: user.avatar.unwrap_or_default(),
+            time: time.unwrap_or_default(),
         }
     }
 }
