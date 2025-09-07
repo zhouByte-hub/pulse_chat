@@ -1,16 +1,19 @@
 use std::sync::Arc;
 
-use crate::PulseResult;
+use crate::PulseError;
 use crate::config::db_config::DatabaseConfig;
 use crate::model::dto::user_dto::UserDto;
 use crate::model::entity::sea_orm_active_enums::Status;
 use crate::model::entity::{contacts, messages, users};
+use crate::model::vo::forget_password_request::ForgetPasswordRequest;
 use crate::model::vo::{login_request::LoginRequest, register_request::RegisterRequest};
+use crate::utils::email_util;
 use crate::utils::token::PulseClaims;
+use crate::{EmailConfig, PulseResult};
 use futures_util::future::join_all;
 use sea_orm::{
     ActiveValue, ColumnTrait, Condition, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
-    SelectColumns,
+    SelectColumns, Set,
 };
 
 pub struct UserService;
@@ -289,5 +292,49 @@ impl UserService {
         Ok(user
             .map(|user| UserDto::from(user, None, None, None))
             .unwrap())
+    }
+
+    pub async fn send_forget_password_email(
+        email: &str,
+        email_config: &EmailConfig,
+    ) -> PulseResult<()> {
+        let connect = DatabaseConfig::get_connection()?;
+        let user = users::Entity::find()
+            .filter(users::Column::Email.eq(email))
+            .one(&connect)
+            .await?;
+        if user.is_none() {
+            return Err(PulseError::PulseStdError("Email not found".to_string()));
+        }
+        email_util::send_email(email, email_config).await?;
+        Ok(())
+    }
+
+    pub async fn reset_password(request: &ForgetPasswordRequest) -> PulseResult<()> {
+        if request.new_password() != request.check_password() {
+            return Err(PulseError::PulseStdError("Password not match".to_string()));
+        }
+        if !email_util::verify_code(&request.code()) {
+            return Err(PulseError::PulseStdError("Code not match".to_string()));
+        }
+        let connect = DatabaseConfig::get_connection()?;
+        let user = users::Entity::find()
+            .filter(users::Column::Email.eq(request.email()))
+            .one(&connect)
+            .await?;
+        if user.is_none() {
+            return Err(PulseError::PulseStdError("Email not found".to_string()));
+        }
+        if let Some(user) = user {
+            let password = format!("{:X}", md5::compute(request.new_password()));
+            users::Entity::update(users::ActiveModel {
+                id: Set(user.id),
+                password_hash: Set(password),
+                ..Default::default()
+            })
+            .exec(&connect)
+            .await?;
+        };
+        Ok(())
     }
 }

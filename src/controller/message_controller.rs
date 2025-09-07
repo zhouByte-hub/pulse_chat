@@ -1,7 +1,7 @@
 use crate::PulseResponse;
 use crate::PulseResponseBody;
-use crate::model::vo::message::Message;
-use crate::model::vo::message::SendMessage;
+use crate::model::dto::message::Message;
+use crate::model::dto::message::SendMessage;
 use crate::service::message_service::MessageService;
 use actix_web::HttpMessage;
 use actix_web::HttpRequest;

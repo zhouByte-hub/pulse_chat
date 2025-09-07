@@ -40,7 +40,7 @@
 
         <div class="form-options">
           <el-checkbox v-model="loginForm.rememberMe">记住我</el-checkbox>
-          <el-link type="primary" :underline="false">忘记密码？</el-link>
+          <el-link type="primary" :underline="false" @click="$router.push('/forgot-password')">忘记密码？</el-link>
         </div>
 
         <el-button

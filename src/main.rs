@@ -31,6 +31,7 @@ async fn main() -> PulseResult<()> {
             TokenFilterFactory::new(config.public_list.clone(), token_security.clone());
         App::new()
             .app_data(web::Data::new(token_security))
+            .app_data(web::Data::new(config.email.clone()))
             .configure(user_request_config)
             .configure(message_request_config)
             .wrap(token_filter)
@@ -46,11 +47,21 @@ struct PulseConfig {
     database: DatabaseConfig,
     token: TokenConfig,
     public_list: Vec<String>,
+    email: EmailConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TokenConfig {
     secret: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct EmailConfig {
+    host: String,
+    port: u16,
+    username: String,
+    password: String,
+    timeout: u64,
 }
 
 async fn read_config() -> PulseResult<PulseConfig> {

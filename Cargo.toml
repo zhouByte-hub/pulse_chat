@@ -20,3 +20,6 @@ config = "0.15.14"
 md5 = "0.8.0"
 futures-util = "0.3.31"
 chrono = { version = "0.4", features = ["serde"] }
+lettre = {version = "0.11", features = ["smtp-transport","tokio1-native-tls"]}
+handlebars = "6.3.2"
+include_dir = {version = "0.7.4", features=["glob"]}

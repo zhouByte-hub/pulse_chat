@@ -1,7 +1,7 @@
 use crate::config::db_config::DatabaseConfig;
+use crate::model::dto::message::SendMessage;
 use crate::model::entity::messages;
-use crate::model::vo::message::SendMessage;
-use crate::{PulseResult, model::vo::message::Message};
+use crate::{PulseResult, model::dto::message::Message};
 use sea_orm::{ActiveValue::Set, ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder};
 
 pub struct MessageService;

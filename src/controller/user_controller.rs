@@ -1,4 +1,8 @@
+use std::collections::HashMap;
+
+use crate::EmailConfig;
 use crate::model::dto::user_dto::UserDto;
+use crate::model::vo::forget_password_request::ForgetPasswordRequest;
 use crate::model::vo::user_search::UserSearch;
 use crate::model::vo::{login_request::LoginRequest, register_request::RegisterRequest};
 use crate::{PulseResponse, service::user_service::UserService, utils::result::PulseResponseBody};
@@ -78,6 +82,24 @@ pub async fn get_user_info(req: HttpRequest) -> PulseResponse<UserDto> {
     Ok(PulseResponseBody::success(user_info))
 }
 
+#[post("/send_forget_password_email")]
+pub async fn send_forget_password_email(
+    body: web::Json<HashMap<String, String>>,
+    email_config: web::Data<EmailConfig>,
+) -> PulseResponse<()> {
+    let email = body
+        .get("email")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("email is empty"))?;
+    let result = UserService::send_forget_password_email(email, email_config.get_ref()).await?;
+    Ok(PulseResponseBody::success(result))
+}
+
+#[post("/reset_password")]
+pub async fn reset_password(body: web::Json<ForgetPasswordRequest>) -> PulseResponse<()> {
+    let result = UserService::reset_password(&body).await?;
+    Ok(PulseResponseBody::success(result))
+}
+
 pub fn user_request_config(service_config: &mut web::ServiceConfig) {
     let scope = web::scope("/api/user")
         .service(user_login)
@@ -86,6 +108,8 @@ pub fn user_request_config(service_config: &mut web::ServiceConfig) {
         .service(user_register)
         .service(contact_list)
         .service(search_contact)
+        .service(send_forget_password_email)
+        .service(reset_password)
         .service(search_user);
     service_config.service(scope);
 }

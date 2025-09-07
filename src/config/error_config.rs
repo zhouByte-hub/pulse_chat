@@ -27,6 +27,24 @@ pub enum PulseError {
 
     #[error("ActixWebError error: {0}")]
     ActixWebError(#[from] actix_web::error::Error),
+
+    #[error("Handlebars error: {0}")]
+    HandlebarsError(#[from] handlebars::TemplateError),
+
+    #[error("RenderError: {0}")]
+    RenderError(#[from] handlebars::RenderError),
+
+    #[error("SystemTimeError: {0}")]
+    SystemTimeError(#[from] std::time::SystemTimeError),
+
+    #[error("EmailError: {0}")]
+    EmailError(#[from] lettre::transport::smtp::Error),
+
+    #[error("AddressError: {0}")]
+    AddressError(#[from] lettre::address::AddressError),
+
+    #[error("LettreError: {0}")]
+    LettreError(#[from] lettre::error::Error),
 }
 
 impl ResponseError for PulseError {

@@ -2,7 +2,7 @@
 database:
   url: "43.139.97.119:3306/pulse_chat"
   username: root
-  password: dev_123
+  password: YOUR_MYSQL_PASSWORD
   max_connections: 100
   min_connections: 10
   connect_timeout: 60
@@ -12,7 +12,15 @@ database:
 
 token:
   secret: "dev_123456"
+email:
+  host: "smtp.qq.com"
+  port: 587
+  username: "1220531071@qq.com"
+  password: "YOUR_EMAIL_PASSWORD"
+  timeout: 30
 
 public_list:
   - "/api/user/login"
   - "/api/user/register"
+  - "/api/user/reset_password"
+  - "/api/user/send_forget_password_email"
