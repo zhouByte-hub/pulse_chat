@@ -105,7 +105,7 @@ mod email_test {
             host: "smtp.qq.com".to_string(),
             port: 587,
             username: "1220531071@qq.com".to_string(),
-            password: "ulfymcwntccvhabd".to_string(),
+            password: "YOUR_EMAIL_PASSWORD".to_string(),
             timeout: 10,
         };
 
