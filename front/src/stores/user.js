@@ -42,22 +42,6 @@ export const useUserStore = defineStore("user", () => {
         }
     }
 
-    const sendResetEmail = async (email) => {
-        try {
-            let response = await axios.post('/api/user/send_reset_email', {
-                email: email
-            })
-            return {
-                success: true,
-                message: response.data.message
-            }
-        } catch (error) {
-            return {
-                success: false,
-                message: error.response?.data?.message || '发送重置邮件失败'
-            }
-        }
-    }
 
     return {
         searchContact,

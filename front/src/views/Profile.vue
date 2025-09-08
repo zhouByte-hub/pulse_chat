@@ -146,13 +146,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const userInfo = JSON.parse(localStorage.getItem('user'))
 
 // 响应式数据
 const activeTab = ref('basic')
@@ -169,20 +168,6 @@ const privacySettings = reactive({
   showOnline: true,
   showLastSeen: true,
   profileVisibility: 'contacts'
-})
-
-// 计算属性
-const userInfo = computed(() => {
-  return authStore.user || {
-    username: '未登录用户',
-    nickname: '',
-    avatar: '',
-    email: '',
-    phone: '',
-    gender: '',
-    birthday: '',
-    bio: ''
-  }
 })
 
 // 方法
