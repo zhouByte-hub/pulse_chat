@@ -341,8 +341,8 @@ const handleSearch = () => {
   })
 }
 
-onMounted(() => {
-  userStore.contactList().then(res => {
+const getContactList = () => {
+    userStore.contactList().then(res => {
         if(res.success) {
           filteredContacts.value = res.data
         }else{
@@ -353,6 +353,17 @@ onMounted(() => {
           router.push('/login')
         }
       })
+}
+
+onMounted(() => {
+  getContactList()
+  setInterval(() => {
+    getContactList()
+    if(selectedContact.value){
+      selectContact(selectedContact.value)
+    }
+  }, 3000)
+  
 })
 
 // 监听消息变化，自动滚动到底部
